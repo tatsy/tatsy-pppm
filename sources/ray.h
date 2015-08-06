@@ -1,9 +1,19 @@
 #ifndef _RAY_H_
 #define _RAY_H_
 
+#if defined(_WIN32) || defined(__WIN32__)
+    #ifdef RAY_EXPORT
+        #define RAY_DLL __declspec(dllexport)
+    #else
+        #define RAY_DLL __declspec(dllimport)
+    #endif
+#else
+    #define RAY_DLL
+#endif
+
 #include "vector3d.h"
 
-class Ray {
+class RAY_DLL Ray {
 private:
     Vector3D _origin;
     Vector3D _direction;
@@ -25,7 +35,7 @@ private:
     void calcInvdir();
 };
 
-class Hitpoint {
+class RAY_DLL Hitpoint {
 private:
     double _distance;
     Vector3D _normal;

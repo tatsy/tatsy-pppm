@@ -1,4 +1,7 @@
+#define VECTOR_3D_EXPORT
 #include "vector3d.h"
+
+#include <sstream>
 
 Vector3D::Vector3D()
     : xyz() 
@@ -90,6 +93,11 @@ Vector3D Vector3D::operator-() const {
     return ret;
 }
 
+Vector3D& Vector3D::operator*=(const Vector3D& v) {
+    this->xyz.d = _mm_mul_ps(xyz.d, v.xyz.d);
+    return *this;
+}
+
 Vector3D& Vector3D::operator*=(double s) {
     float f = (float)s;
     __m128 fff = _mm_setr_ps(s, s, s, 0.0f);
@@ -97,10 +105,22 @@ Vector3D& Vector3D::operator*=(double s) {
     return *this;
 }
 
+Vector3D& Vector3D::operator/=(const Vector3D& v) {
+    assert(v.x() != 0.0, v.y() != 0.0 && v.z() != 0.0 && "Zero division!!");
+    this->xyz.d = _mm_div_ps(xyz.d, v.xyz.d);
+    return *this;
+}
+
 Vector3D& Vector3D::operator/=(double s) {
     assert(s != 0.0 && "Zero division!!");
     this->operator*=(1.0 / s);
     return *this;
+}
+
+std::string Vector3D::toString() const {
+    std::stringstream ss;
+    ss << "(" << x() << ", " << y() << ", " << z() << ")";
+    return ss.str();
 }
 
 Vector3D operator+(const Vector3D& u, const Vector3D& v) {
@@ -115,6 +135,12 @@ Vector3D operator-(const Vector3D& u, const Vector3D& v) {
     return ret;
 }
 
+Vector3D operator*(const Vector3D& u, const Vector3D& v) {
+    Vector3D ret = u;
+    ret *= v;
+    return ret;
+}
+
 Vector3D operator*(const Vector3D& v, double s) {
     Vector3D ret = v;
     ret *= s;
@@ -124,6 +150,12 @@ Vector3D operator*(const Vector3D& v, double s) {
 Vector3D operator*(double s, const Vector3D& v) {
     Vector3D ret = v;
     ret *= s;
+    return ret;
+}
+
+Vector3D operator/(const Vector3D& u, const Vector3D& v) {
+    Vector3D ret = u;
+    ret /= v;
     return ret;
 }
 

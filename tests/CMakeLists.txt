@@ -1,0 +1,44 @@
+# Enable GTest
+enable_testing()
+
+option(BUILD_TEST "BUILD_TEST" ON)
+set(GTEST_ROOT $ENV{GTEST_ROOT} CACHE STRING "GTEST_ROOT")
+
+if (${BUILD_TEST} STREQUAL "ON")
+  # Link directory
+  link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+
+  if (NOT "${GTEST_ROOT}" STREQUAL "")
+    set(GTEST_LIB)
+    if (WIN32)
+      set(GTEST_LIB "gtest.lib")
+      set(GTEST_MAIN_LIB "gtest_main.lib")
+    else()
+      set(GTEST_LIB "libgtest.a")
+      set(GTEST_MAIN_LIB "libgtest_main.a")
+    endif()
+    set(GTEST_LIBRARY $ENV{GTEST_ROOT}/lib/${GTEST_LIB})
+    set(GTEST_MAIN_LIBRARY $ENV{GTEST_ROOT}/lib/${GTEST_MAIN_LIB})
+    set(GTEST_INCLUDE_DIRS $ENV{GTEST_ROOT}/include)
+  else()
+    set(GTEST_LIBRARY $ENV{GTEST_LIBRARY})
+    set(GTEST_MAIN_LIBRARY $ENV{GTEST_MAIN_LIBRARY})
+    set(GTEST_INCLUDE_DIRS $ENV{GTEST_INCLUDE_DIRS})
+  endif()
+
+  set(TEST_NAME unittests)
+  set(SOURCE_FILES all_tests.cc
+                   test_vector3d.cc
+                   test_trimesh.cc)
+
+  add_executable(${TEST_NAME} ${SOURCE_FILES})
+  target_link_libraries(${TEST_NAME} ${GTEST_LIBRARY})
+  target_link_libraries(${TEST_NAME} ${GTEST_MAIN_LIBRARY})
+  target_link_libraries(${TEST_NAME} "${LIB_PREFIX}photon_diffusion${LIB_POSTFIX}")
+
+  add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
+  add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose DEPENDS ${TEST_NAME})
+
+  include_directories(${CMAKE_CURRENT_LIST_DIR})
+  include_directories(${GTEST_INCLUDE_DIRS})
+endif()

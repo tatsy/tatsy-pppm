@@ -12,6 +12,15 @@
 static const double INFTY = 1.0e20;
 static const double EPS   = 1.0e-12;
 static const double PI    = 4.0 * atan(1.0);
+static const double invPI = 1.0 / PI;
+
+extern void* enabler;
+template <class T, typename std::enable_if<std::is_arithmetic<T>::value>::type *& = enabler>
+inline T clamp(T v, T lo, T hi) {
+    if (v < lo) v = lo;
+    if (v > hi) v = hi;
+    return v;
+}
 
 // ----------------------------------------------------------------------------
 // Parallel for
@@ -48,10 +57,10 @@ static const double PI    = 4.0 * atan(1.0);
 // isnan / isinf
 // ----------------------------------------------------------------------------
 #if defined(_WIN32) || defined(__WIN32__)
-#if _MSC_VER <= 1600
-#define isnan(x) _isnan(x)
-#define isinf(x) (!_finite(x))
-#endif
+    #if _MSC_VER <= 1600
+        #define isnan(x) _isnan(x)
+        #define isinf(x) (!_finite(x))
+    #endif
 #endif
 
 #endif  // _COMMON_H_

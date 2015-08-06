@@ -1,11 +1,22 @@
 #ifndef _VECTOR_3D_H_
 #define _VECTOR_3D_H_
 
+#if defined(_WIN32) || defined(__WIN32__)
+    #ifdef VECTOR_3D_EXPORT
+        #define VECTOR_3D_DLL __declspec(dllexport)
+    #else
+        #define VECTOR_3D_DLL __declspec(dllimport)
+    #endif
+#else
+    #define VECTOR_3D_DLL
+#endif
+
+#include <string>
 #include <xmmintrin.h>
 
 #include "common.h"
 
-class Vector3D {
+class VECTOR_3D_DLL Vector3D {
 private:
 
     union m128 {
@@ -26,7 +37,9 @@ public:
     Vector3D& operator-=(const Vector3D& v);
     Vector3D operator-() const;
 
+    Vector3D& operator*=(const Vector3D& v);
     Vector3D& operator*=(double s);
+    Vector3D& operator/=(const Vector3D& v);
     Vector3D& operator/=(double s);
 
     static double dot(const Vector3D& u, const Vector3D& v);
@@ -50,12 +63,16 @@ public:
     inline void setZ(double z) { xyz.v[2] = (float)z; }
 
     inline double operator[](int d) const { return xyz.v[d]; }
+
+    std::string toString() const;
 };
 
-Vector3D operator+(const Vector3D& u, const Vector3D& v);
-Vector3D operator-(const Vector3D& u, const Vector3D& v);
-Vector3D operator*(const Vector3D& v, double s);
-Vector3D operator*(double s, const Vector3D& v);
-Vector3D operator/(const Vector3D& v, double s);
+VECTOR_3D_DLL Vector3D operator+(const Vector3D& u, const Vector3D& v);
+VECTOR_3D_DLL Vector3D operator-(const Vector3D& u, const Vector3D& v);
+VECTOR_3D_DLL Vector3D operator*(const Vector3D& u, const Vector3D& v);
+VECTOR_3D_DLL Vector3D operator*(const Vector3D& v, double s);
+VECTOR_3D_DLL Vector3D operator*(double s, const Vector3D& v);
+VECTOR_3D_DLL Vector3D operator/(const Vector3D& u, const Vector3D& v);
+VECTOR_3D_DLL Vector3D operator/(const Vector3D& v, double s);
 
 #endif  // _VECTOR_3D_H_

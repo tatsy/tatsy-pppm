@@ -1,4 +1,4 @@
-#define SPICA_RAY_EXPORT
+#define RAY_EXPORT
 #include "ray.h"
 #include "common.h"
 

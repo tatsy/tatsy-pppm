@@ -1,3 +1,4 @@
+#define TRIANGLE_EXPORT
 #include "triangle.h"
 #include "common.h"
 

@@ -1,12 +1,28 @@
 #ifndef _PROGRESSIVE_PHOTON_MAPPING_H_
 #define _PROGRESSIVE_PHOTON_MAPPING_H_
 
+#if defined(_WIN32) || defined(__WIN32__)
+    #ifdef PROGRESSIVe_PHOTON_MAPPING_EXPORT
+        #define PROGRESSIVe_PHOTON_MAPPING_DLL __declspec(dllexport)
+    #else
+        #define PROGRESSIVe_PHOTON_MAPPING_DLL __declspec(dllimport)
+    #endif
+#else
+    #define PROGRESSIVe_PHOTON_MAPPING_DLL
+#endif
+
+
+#include "image.h"
 #include "scene.h"
+#include "orthogonal_camera.h"
+
 #include "random.h"
+#include "random_sequence.h"
+
 #include "hash_grid.h"
 #include "render_parameters.h"
 
-class ProgressivePhotonMapping {
+class PROGRESSIVe_PHOTON_MAPPING_DLL ProgressivePhotonMapping {
 private:
     struct RenderPoint : Vector3D {
         Vector3D normal;
@@ -18,7 +34,7 @@ private:
         double r2;
         int n;
 
-        explicit RenderPoint(const Vector3D& v)
+        explicit RenderPoint(const Vector3D& v = Vector3D())
             : Vector3D(v)
             , normal()
             , flux()
@@ -69,16 +85,22 @@ private:
     HashGrid<RenderPoint*> hashgrid;
     static const double ALPHA;
 
+    Image _result;
+
 public:
     ProgressivePhotonMapping();
     ~ProgressivePhotonMapping();
 
 public:
-    void render(const Scene& scene, const RenderParameters& renderParams);
+    void render(const Scene& scene, const Camera& camera, const RenderParameters& params);
+
+    inline const Image& result() const { return _result; }
 
 private:
-    void traceRays(const Scene& scene, const RenderParameters& renderParams);
-    void executePathTracing(const Scene& scene, Random& rng, RenderPoint* rp, const int bounceLimit = 64);
+    void constructHashGrid(std::vector<RenderPoint>& rpoints, const int imageW, const int imageH);
+    void traceRays(const Scene& scene, const Camera& camera, Random& rand, std::vector<RenderPoint>* rpoints);
+    void tracePhotons(const Scene& scene, Random& rand, int photons, const int bounceLimit = 64);
+    void executePathTracing(const Scene& scene, const Camera& camera, RandomSequence& rseq, RenderPoint* rp, const int bounceLimit = 64);
 };
 
 #endif  // _PROGRESSIVE_PHOTON_MAPPING_H_

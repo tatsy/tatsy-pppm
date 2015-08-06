@@ -13,6 +13,16 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY})
 
+# Library prefix and postfix
+if (WIN32)
+  set(LIB_PREFIX "")
+  set(LIB_POSTFIX ".lib")
+else()
+  set(LIB_PREFIX "lib")
+  set(LIB_POSTFIX ".so")
+endif()
+
+# Build option
 if (MSVC)
   find_package(OpenMP REQUIRED)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
@@ -21,3 +31,4 @@ else()
 endif()
 
 add_subdirectory(sources)
+add_subdirectory(tests)

@@ -1,3 +1,4 @@
+#define SCENE_EXPORT
 #include "scene.h"
 
 #include <cstring>
@@ -6,7 +7,10 @@ Scene::Scene()
     : _lightIDs()
     , _objects()
     , _brdfs()
+    , _envmap()
 {
+    _envmap.resize(512, 512);
+    _envmap.clearColor(Vector3D(0.0, 0.0, 0.0));
 }
 
 Scene::~Scene()

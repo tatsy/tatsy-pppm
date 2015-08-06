@@ -1,6 +1,16 @@
 #ifndef _BBOX_H_
 #define _BBOX_H_
 
+#if defined(_WIN32) || defined(__WIN32__)
+    #ifdef BBOX_EXPORT
+        #define BBOX_DLL __declspec(dllexport)
+    #else
+        #define BBOX_DLL __declspec(dllimport)
+    #endif
+#else
+    #define BBOX_DLL
+#endif
+
 #include "vector3d.h"
 #include "triangle.h"
 #include "ray.h"
@@ -8,7 +18,7 @@
 // ----------------------------------------
 // Axis-aligned bounding box
 // ----------------------------------------    
-class BBox {
+class BBOX_DLL BBox {
 private:
     Vector3D _posMin;    // Position of minimum corner
     Vector3D _posMax;    // Position of maximum corner

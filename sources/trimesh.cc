@@ -1,3 +1,4 @@
+#define TRIMESH_EXPORT
 #include "trimesh.h"
 
 #include <cstdio>
@@ -208,7 +209,10 @@ void Trimesh::loadPly(const std::string& filename) {
 
 void Trimesh::loadObj(const std::string& filename) {
     std::ifstream ifs(filename.c_str(), std::ios::in);
-    assert(ifs.is_open() && "Failed to open mesh file");
+        if (!ifs.is_open()) {
+        std::cerr << "Failed to open mesh file: " << filename << std::endl;
+        std::abort();
+    }
 
     std::stringstream ss;
     std::string line;

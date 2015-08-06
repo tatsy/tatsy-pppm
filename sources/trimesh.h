@@ -1,6 +1,16 @@
 #ifndef _TRIMESH_H_
 #define _TRIMESH_H_
 
+#if defined(_WIN32) || defined(__WIN32__)
+    #ifdef TRIMESH_EXPORT
+        #define TRIMESH_DLL __declspec(dllexport)
+    #else
+        #define TRIMESH_DLL __declspec(dllimport)
+    #endif
+#else
+    #define TRIMESH_DLL 
+#endif
+
 #include <string>
 #include <memory>
 #include <vector>
@@ -54,7 +64,7 @@ public:
     }    
 };
     
-class Trimesh : public IGeometry {
+class TRIMESH_DLL Trimesh : public IGeometry {
 private:
     std::vector<Vector3D> _vertices;
     std::vector<Vector3D> _normals;

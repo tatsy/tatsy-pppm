@@ -1,3 +1,4 @@
+#define BRDF_EXPORT
 #include "brdf.h"
 
 #include <cstdlib>
@@ -42,10 +43,16 @@ void BRDF::sample(const Vector3D& in, const Vector3D& normal, const double rand1
     _ptr->sample(in, normal, rand1, rand2, out);
 }
 
+BrdfType BRDF::type() const {
+    return _ptr->type();
+}
+
 
 // --------------------------------------------------
 // Lambertian BRDF
 // --------------------------------------------------
+
+BrdfType LambertianBRDF::_type = BRDF_LAMBERTIAN;
 
 LambertianBRDF::LambertianBRDF(const Vector3D& reflectance)
     : _reflectance(reflectance)
@@ -60,6 +67,10 @@ void LambertianBRDF::sample(const Vector3D& in, const Vector3D& normal, const do
     sampler::onHemisphere(normal, out, rand1, rand2);
 }
 
+BrdfType LambertianBRDF::type() const {
+    return _type;
+}
+
 BRDFBase* LambertianBRDF::clone() const {
     return new LambertianBRDF(_reflectance);
 }
@@ -71,6 +82,8 @@ BRDF LambertianBRDF::factory(const Vector3D& reflectance) {
 // --------------------------------------------------
 // Specular BRDF
 // --------------------------------------------------
+
+BrdfType SpecularBRDF::_type = BRDF_SPECULAR;
 
 SpecularBRDF::SpecularBRDF(const Vector3D& reflectance)
     : _reflectance(reflectance)
@@ -85,6 +98,10 @@ void SpecularBRDF::sample(const Vector3D& in, const Vector3D& normal, const doub
     (*out) = Vector3D::reflect(in, normal);
 }
 
+BrdfType SpecularBRDF::type() const {
+    return _type;
+}
+
 BRDFBase* SpecularBRDF::clone() const {
     return new SpecularBRDF(_reflectance);
 }
@@ -96,6 +113,8 @@ BRDF SpecularBRDF::factory(const Vector3D& reflectance) {
 // --------------------------------------------------
 // Phong BRDF
 // --------------------------------------------------
+
+BrdfType PhongBRDF::_type = BRDF_PHONG;
 
 PhongBRDF::PhongBRDF(const Vector3D& reflectance, const double n)
     : _reflectance(reflectance)
@@ -124,6 +143,10 @@ void PhongBRDF::sample(const Vector3D& in, const Vector3D& normal, const double 
     double phi = 2.0 * PI * rand2;
 
     (*out) = u * sin(theta) * cos(phi) + w * cos(theta) + v * sin(theta) * sin(phi);
+}
+
+BrdfType PhongBRDF::type() const {
+    return _type;
 }
 
 BRDFBase* PhongBRDF::clone() const {

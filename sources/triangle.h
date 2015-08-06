@@ -1,9 +1,19 @@
 #ifndef _TRIANGLE_H_
 #define _TRIANGLE_H_
 
+#if defined(_WIN32) || defined(__WIN32__)
+    #ifdef TRIANGLE_EXPORT
+        #define TRIANGLE_DLL __declspec(dllexport)
+    #else
+        #define TRIANGLE_DLL __declspec(dllimport)
+    #endif
+#else
+    #define TRIANGLE_DLL
+#endif
+
 #include "geometry_interface.h"
 
-class Triangle : public IGeometry {
+class TRIANGLE_DLL Triangle : public IGeometry {
 private:
     Vector3D _p0;
     Vector3D _p1;
