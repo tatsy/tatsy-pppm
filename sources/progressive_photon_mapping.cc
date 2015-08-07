@@ -185,11 +185,11 @@ void ProgressivePhotonMapping::tracePhotons(const Scene& scene, Random& rand, in
             }
 
             const int objectID = isect.objectID();
-            const BRDF& brdf = scene.getBrdf(objectID);
+            const BSDF& bsdf = scene.getBsdf(objectID);
             const Hitpoint& hitpoint = isect.hitpoint();
             const Vector3D orientNormal = Vector3D::dot(hitpoint.normal(), currentRay.direction()) < 0.0 ? hitpoint.normal() : -hitpoint.normal();
 
-            if (brdf.type() == BRDF_LAMBERTIAN) {
+            if (bsdf.type() == BSDF_TYPE_LAMBERTIAN_BRDF) {
                 // Gather render points
                 std::vector<RenderPoint*> results;
                 omplock {
@@ -211,18 +211,18 @@ void ProgressivePhotonMapping::tracePhotons(const Scene& scene, Random& rand, in
                 }
 
                 // Russian roulette determines if trace is continued or terminated
-                const double probability = (brdf.reflectance().x() + brdf.reflectance().y() + brdf.reflectance().z()) / 3.0;
+                const double probability = (bsdf.reflectance().x() + bsdf.reflectance().y() + bsdf.reflectance().z()) / 3.0;
                 if (rseq.pop() < probability) {
-                    brdf.sample(currentRay.direction(), orientNormal, rseq.pop(), rseq.pop(), &nextDir);
+                    bsdf.sample(currentRay.direction(), orientNormal, rseq.pop(), rseq.pop(), &nextDir);
                     currentRay = Ray(hitpoint.position(), nextDir);
-                    currentFlux = currentFlux * brdf.reflectance() / probability;
+                    currentFlux = currentFlux * bsdf.reflectance() / probability;
                 } else {
                     break;
                 }
-            } else {
-                brdf.sample(currentRay.direction(), orientNormal, rseq.pop(), rseq.pop(), &nextDir);
+            } else if (bsdf.type() != BSDF_TYPE_BSSRDF) {
+                bsdf.sample(currentRay.direction(), orientNormal, rseq.pop(), rseq.pop(), &nextDir);
                 currentRay = Ray(hitpoint.position(), nextDir);
-                currentFlux = currentFlux * brdf.reflectance();
+                currentFlux = currentFlux * bsdf.reflectance();
             }
         }
 
@@ -256,21 +256,21 @@ void ProgressivePhotonMapping::executePathTracing(const Scene& scene, const Came
 
         const int objectID = isect.objectID();
         const Hitpoint& hitpoint = isect.hitpoint();
-        const BRDF& brdf = scene.getBrdf(objectID);
+        const BSDF& bsdf = scene.getBsdf(objectID);
         const Vector3D orientNormal = Vector3D::dot(hitpoint.normal(), ray.direction()) < 0.0 ? hitpoint.normal() : -hitpoint.normal();
 
-        if (brdf.type() == BRDF_LAMBERTIAN) {
-            weight = weight * brdf.reflectance();
+        if (bsdf.type() == BSDF_TYPE_LAMBERTIAN_BRDF) {
+            weight = weight * bsdf.reflectance();
             rp->setPosition(hitpoint.position());
             rp->normal = hitpoint.normal();
             rp->weight = weight;
             rp->coeff  = coeff;
             break;
-        } else {
+        } else if (bsdf.type() != BSDF_TYPE_BSSRDF) {
             Vector3D nextDir;
-            brdf.sample(ray.direction(), orientNormal, rseq.pop(), rseq.pop(), &nextDir);
+            bsdf.sample(ray.direction(), orientNormal, rseq.pop(), rseq.pop(), &nextDir);
             ray = Ray(hitpoint.position(), nextDir);
-            weight = weight * brdf.reflectance();
+            weight = weight * bsdf.reflectance();
         }
     }
 }

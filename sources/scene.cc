@@ -5,7 +5,7 @@
     
 Scene::Scene()
     : _triangles()
-    , _brdfs()
+    , _bsdfs()
     , _envmap()
 {
     _envmap.resize(512, 512);
@@ -21,15 +21,15 @@ const Triangle& Scene::getTriangle(int id) const {
     return _triangles[id];
 }
 
-const BRDF& Scene::getBrdf(int id) const {
-    assert(id >= 0 && id < _brdfIds.size() && "Object index out of boudns");
-    return _brdfs[_brdfIds[id]];
+const BSDF& Scene::getBsdf(int id) const {
+    assert(id >= 0 && id < _bsdfIds.size() && "Object index out of boudns");
+    return _bsdfs[_bsdfIds[id]];
 }
 
 void Scene::clear() {
     _triangles.clear();
-    _brdfIds.clear();
-    _brdfs.clear();
+    _bsdfIds.clear();
+    _bsdfs.clear();
 }
 
 void Scene::setAccelerator() {

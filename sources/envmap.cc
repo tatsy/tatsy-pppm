@@ -110,7 +110,7 @@ void Envmap::createImportanceMap() {
                 }
             }
 
-            const double lum = Vector3D::dot(accum, Vector3D(0.2126, 0.7152, 0.0722));
+            const double lum = luminance(accum);
             _importance.pixel(ix, iy) = Vector3D(1.0, 1.0, 1.0) * lum / area;
             total += _importance(ix, iy).x();
         }

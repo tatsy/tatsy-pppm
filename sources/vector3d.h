@@ -14,8 +14,6 @@
 #include <string>
 #include <xmmintrin.h>
 
-#include "common.h"
-
 class VECTOR_3D_DLL Vector3D {
 private:
 

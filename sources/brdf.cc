@@ -3,56 +3,14 @@
 
 #include <cstdlib>
 
+#include "bsdf.h"
 #include "sampler.h"
-
-// --------------------------------------------------
-// BRDF
-// --------------------------------------------------
-BRDF::BRDF()
-    : _ptr(NULL)
-{
-}
-
-BRDF::BRDF(const BRDF& brdf)
-    : _ptr(NULL)
-{
-    this->operator=(brdf);
-}
-
-BRDF::BRDF(const BRDFBase* ptr)
-    : _ptr(ptr)
-{
-}
-
-BRDF::~BRDF()
-{
-    delete _ptr;
-}
-
-BRDF& BRDF::operator=(const BRDF& brdf) {
-    delete _ptr;
-    _ptr = brdf._ptr->clone();
-    return *this;
-}
-
-Vector3D BRDF::reflectance() const {
-    return _ptr->reflectance();
-}
-
-void BRDF::sample(const Vector3D& in, const Vector3D& normal, const double rand1, const double rand2, Vector3D* out) const {
-    _ptr->sample(in, normal, rand1, rand2, out);
-}
-
-BrdfType BRDF::type() const {
-    return _ptr->type();
-}
-
 
 // --------------------------------------------------
 // Lambertian BRDF
 // --------------------------------------------------
 
-BrdfType LambertianBRDF::_type = BRDF_LAMBERTIAN;
+BsdfType LambertianBRDF::_type = BSDF_TYPE_LAMBERTIAN_BRDF;
 
 LambertianBRDF::LambertianBRDF(const Vector3D& reflectance)
     : _reflectance(reflectance)
@@ -67,7 +25,7 @@ void LambertianBRDF::sample(const Vector3D& in, const Vector3D& normal, const do
     sampler::onHemisphere(normal, out, rand1, rand2);
 }
 
-BrdfType LambertianBRDF::type() const {
+BsdfType LambertianBRDF::type() const {
     return _type;
 }
 
@@ -75,15 +33,15 @@ BRDFBase* LambertianBRDF::clone() const {
     return new LambertianBRDF(_reflectance);
 }
 
-BRDF LambertianBRDF::factory(const Vector3D& reflectance) {
-    return BRDF(new LambertianBRDF(reflectance));
+BSDF LambertianBRDF::factory(const Vector3D& reflectance) {
+    return BSDF(new LambertianBRDF(reflectance));
 }
 
 // --------------------------------------------------
 // Specular BRDF
 // --------------------------------------------------
 
-BrdfType SpecularBRDF::_type = BRDF_SPECULAR;
+BsdfType SpecularBRDF::_type = BSDF_TYPE_SPECULAR_BRDF;
 
 SpecularBRDF::SpecularBRDF(const Vector3D& reflectance)
     : _reflectance(reflectance)
@@ -98,7 +56,7 @@ void SpecularBRDF::sample(const Vector3D& in, const Vector3D& normal, const doub
     (*out) = Vector3D::reflect(in, normal);
 }
 
-BrdfType SpecularBRDF::type() const {
+BsdfType SpecularBRDF::type() const {
     return _type;
 }
 
@@ -106,15 +64,15 @@ BRDFBase* SpecularBRDF::clone() const {
     return new SpecularBRDF(_reflectance);
 }
 
-BRDF SpecularBRDF::factory(const Vector3D& reflectance) {
-    return BRDF(new SpecularBRDF(reflectance));
+BSDF SpecularBRDF::factory(const Vector3D& reflectance) {
+    return BSDF(new SpecularBRDF(reflectance));
 }
 
 // --------------------------------------------------
 // Phong BRDF
 // --------------------------------------------------
 
-BrdfType PhongBRDF::_type = BRDF_PHONG;
+BsdfType PhongBRDF::_type = BSDF_TYPE_PHONG_BRDF;
 
 PhongBRDF::PhongBRDF(const Vector3D& reflectance, const double n)
     : _reflectance(reflectance)
@@ -145,7 +103,7 @@ void PhongBRDF::sample(const Vector3D& in, const Vector3D& normal, const double 
     (*out) = u * sin(theta) * cos(phi) + w * cos(theta) + v * sin(theta) * sin(phi);
 }
 
-BrdfType PhongBRDF::type() const {
+BsdfType PhongBRDF::type() const {
     return _type;
 }
 
@@ -153,6 +111,6 @@ BRDFBase* PhongBRDF::clone() const {
     return new PhongBRDF(_reflectance, _coeffN);
 }
 
-BRDF PhongBRDF::factory(const Vector3D& reflectance, const double n) {
-    return BRDF(new PhongBRDF(reflectance, n));
+BSDF PhongBRDF::factory(const Vector3D& reflectance, const double n) {
+    return BSDF(new PhongBRDF(reflectance, n));
 }

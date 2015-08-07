@@ -5,6 +5,7 @@
 #include <cassert>
 
 #include "directories.h"
+#include "vector3d.h"
 
 // ----------------------------------------------------------------------------
 // Constants
@@ -13,6 +14,12 @@ static const double INFTY = 1.0e20;
 static const double EPS   = 1.0e-8;
 static const double PI    = 4.0 * atan(1.0);
 static const double invPI = 1.0 / PI;
+static const double IOR_OBJECT = 1.5;
+static const double IOR_VACCUM = 1.0;
+
+// ----------------------------------------------------------------------------
+// Special functions
+// ----------------------------------------------------------------------------
 
 extern void* enabler;
 template <class T, typename std::enable_if<std::is_arithmetic<T>::value>::type *& = enabler>
@@ -20,6 +27,10 @@ inline T clamp(T v, T lo, T hi) {
     if (v < lo) v = lo;
     if (v > hi) v = hi;
     return v;
+}
+
+inline double luminance(const Vector3D& v) {
+    return Vector3D::dot(v, Vector3D(0.2126, 0.7152, 0.0722));
 }
 
 // ----------------------------------------------------------------------------

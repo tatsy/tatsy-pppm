@@ -86,16 +86,16 @@ Vector3D PathTracing::radiance(const Scene& scene, const Ray& ray, RandomSequenc
     double rands[3] = { rseq.pop(), rseq.pop(), rseq.pop() };
 
     const int objectID = isect.objectID();
-    const BRDF& brdf = scene.getBrdf(objectID);
+    const BSDF& bsdf = scene.getBsdf(objectID);
     const Hitpoint& hitpoint = isect.hitpoint();
     const Vector3D orientNormal = Vector3D::dot(ray.direction(), hitpoint.normal()) < 0.0 ? hitpoint.normal() : -hitpoint.normal();
 
     if (bounces >= bounceLimit) {
-        return brdf.reflectance();
+        return bsdf.reflectance();
     }
 
     // Russian roulette
-    double roulette = std::max(brdf.reflectance().x(), std::max(brdf.reflectance().y(), brdf.reflectance().z()));
+    double roulette = std::max(bsdf.reflectance().x(), std::max(bsdf.reflectance().y(), bsdf.reflectance().z()));
     if (bounces > bounceMin) {
         if (roulette < rands[0]) {
             return Vector3D(0.0, 0.0, 0.0);
@@ -108,9 +108,9 @@ Vector3D PathTracing::radiance(const Scene& scene, const Ray& ray, RandomSequenc
     Vector3D nextRadiance(1.0, 1.0, 1.0);
 
     Vector3D nextDir;
-    brdf.sample(ray.direction(), orientNormal, rands[1], rands[2], &nextDir);
+    bsdf.sample(ray.direction(), orientNormal, rands[1], rands[2], &nextDir);
     Ray nextRay(hitpoint.position(), nextDir);
-    weight = weight * brdf.reflectance() / roulette;
+    weight = weight * bsdf.reflectance() / roulette;
     nextRadiance = radiance(scene, nextRay, rseq, bounces + 1, bounceLimit, bounceMin);
 
     return weight * nextRadiance;

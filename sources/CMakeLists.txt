@@ -13,19 +13,26 @@ set(SOURCES vector3d.cc
             perspective_camera.cc
             qbvh_accel.cc
             hash_grid.cc
+            bsdf.cc
             brdf.cc
+            bssrdf.cc
             image.cc
             envmap.cc
             scene.cc
             sampler.cc
+            photon_map.cc
             path_tracing.cc
             progressive_photon_mapping.cc
+            subsurface_integrator.cc
             photon_diffusion.cc)
 
 set(HEADERS common.h
             renderer.h
             timer.h
             size.h
+            readonly_interface.h
+            kdtree.h
+            kdtree_detail.h
             random.h
             halton.h
             random_sequence.h
@@ -43,14 +50,18 @@ set(HEADERS common.h
             qbvh_accel.h
             hash_grid.h
             random_queue.h
+            bsdf.h
             brdf.h
+            bssrdf.h
             image.h
             envmap.h
             scene.h
             sampler.h
             render_parameters.h
+            photon_map.h
             path_tracing.h
             progressive_photon_mapping.h
+            subsurface_integrator.h
             photon_diffusion.h)
 
 add_library(photon_diffusion SHARED ${SOURCES} ${HEADERS})

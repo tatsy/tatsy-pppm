@@ -11,6 +11,7 @@
     #define TRIMESH_DLL 
 #endif
 
+#include <cassert>
 #include <string>
 #include <memory>
 #include <vector>
