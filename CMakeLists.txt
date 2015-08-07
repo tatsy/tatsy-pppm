@@ -30,5 +30,16 @@ else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g -O2 -fopenmp")
 endif()
 
+# Options for SSE
+option(ENABLE_SSE2 "ENABLE_SSE2" OFF)
+if (${ENABLE_SSE2} STREQUAL "ON")
+  add_definitions(-DENABLE_SSE2)
+  if (MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:SSE2")
+  else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsse2")
+  endif()
+endif()
+
 add_subdirectory(sources)
 add_subdirectory(tests)

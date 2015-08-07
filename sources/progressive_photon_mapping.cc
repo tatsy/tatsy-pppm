@@ -60,6 +60,7 @@ void ProgressivePhotonMapping::render(const Scene& scene, const Camera& camera, 
 
         char filename[512];
         sprintf(filename, (RESULT_DIRECTORY + "progressive_photonmap_%03d.bmp").c_str(), t + 1);
+        _result.gamma(2.2, true);
         _result.saveBMP(filename);
     }
 
@@ -101,6 +102,7 @@ void ProgressivePhotonMapping::constructHashGrid(std::vector<RenderPoint>& rpoin
     for (int i = 0; i < numPixels; i++) {
         Vector3D boxMin = static_cast<Vector3D>(rpoints[i]) - iradv;
         Vector3D boxMax = static_cast<Vector3D>(rpoints[i]) + iradv;
+        hashgrid.add(&rpoints[i], boxMin, boxMax);
     }
 }
 
@@ -149,6 +151,7 @@ void ProgressivePhotonMapping::traceRays(const Scene& scene, const Camera& camer
 void ProgressivePhotonMapping::tracePhotons(const Scene& scene, Random& rand, int photons, const int bounceLimit) {
     std::cout << "Shooting photons ..." << std::endl;
     int proc = 0;
+
     ompfor (int pid = 0; pid < photons; pid++) {
         RandomSequence rseq;
         omplock {
@@ -161,19 +164,16 @@ void ProgressivePhotonMapping::tracePhotons(const Scene& scene, Random& rand, in
 
         Vector3D currentFlux = photon.flux();
 
-        Vector3D nextDir = -photon.direction(); 
-        // sampler::onHemisphere(normalLight, &nextDir, rseq.pop(), rseq.pop());
+        Vector3D nextDir; 
+        sampler::onHemisphere(normalLight, &nextDir, rseq.pop(), rseq.pop());
 
         Ray currentRay(posLight, nextDir);
         Vector3D prevNormal = normalLight;
 
-        // printf("pos: %f %f %f\n", posLight.x(), posLight.y(), posLight.z());
-        // printf("nrm: %f %f %f\n", normalLight.x(), normalLight.y(), normalLight.z());
-
         // Shooting photons
         for (int bounce = 0; ; bounce++) {
             // Remove photons with zero flux
-            if (std::max(currentFlux.x(), std::max(currentFlux.y(), currentFlux.z())) <= 0.0 || bounce >= bounceLimit) {
+            if (bounce >= bounceLimit || std::max(currentFlux.x(), std::max(currentFlux.y(), currentFlux.z())) <= 0.0) {
                 break;
             }
 
@@ -206,8 +206,6 @@ void ProgressivePhotonMapping::tracePhotons(const Scene& scene, Random& rand, in
                             rpp->r2 *= g;
                             rpp->n  += 1;
                             rpp->flux = (rpp->flux + rpp->weight * currentFlux * invPI) * g;
-                            printf("weight: %f %f %f\n", rpp->weight.x(), rpp->weight.y(), rpp->weight.z());
-                            printf("  flux: %f %f %f\n", currentFlux.x(), currentFlux.y(), currentFlux.z());
                         }
                     }
                 }
@@ -215,18 +213,20 @@ void ProgressivePhotonMapping::tracePhotons(const Scene& scene, Random& rand, in
                 // Russian roulette determines if trace is continued or terminated
                 const double probability = (brdf.reflectance().x() + brdf.reflectance().y() + brdf.reflectance().z()) / 3.0;
                 if (rseq.pop() < probability) {
-                    brdf.sample(currentRay.direction(), hitpoint.normal(), rseq.pop(), rseq.pop(), &nextDir);
+                    brdf.sample(currentRay.direction(), orientNormal, rseq.pop(), rseq.pop(), &nextDir);
                     currentRay = Ray(hitpoint.position(), nextDir);
                     currentFlux = currentFlux * brdf.reflectance() / probability;
+                } else {
+                    break;
                 }
             } else {
-                brdf.sample(currentRay.direction(), hitpoint.normal(), rseq.pop(), rseq.pop(), &nextDir);
+                brdf.sample(currentRay.direction(), orientNormal, rseq.pop(), rseq.pop(), &nextDir);
                 currentRay = Ray(hitpoint.position(), nextDir);
                 currentFlux = currentFlux * brdf.reflectance();
             }
         }
 
-        omplock{
+        omplock {
             proc += 1;
             if (proc % 100 == 0) {
                 printf("%6.2f %% processed ...\r", 100.0 * proc / photons);
@@ -239,13 +239,15 @@ void ProgressivePhotonMapping::tracePhotons(const Scene& scene, Random& rand, in
 void ProgressivePhotonMapping::executePathTracing(const Scene& scene, const Camera& camera, RandomSequence& rseq, RenderPoint* rp, const int bounceLimit) {
     assert(rp->pixelX >= 0 && rp->pixelY >= 0 && rp->pixelX < camera.imagesize().width() && rp->pixelY < camera.imagesize().height() && "Pixel index out of bounds!!");   
 
-    Ray ray = camera.getRay(rp->pixelX, rp->pixelY);
-    const double coeff = 1.0;
+    double px = rp->pixelX + rseq.pop() - 0.5;
+    double py = rp->pixelY + rseq.pop() - 0.5;
+    Ray ray = camera.getRay(px, py);
+    const double coeff = camera.sensitivity();
 
     Intersection isect;
     Vector3D weight(1.0, 1.0, 1.0);
     for (int bounce = 0; ; bounce++) {
-        if (!scene.intersect(ray, isect) || bounce > bounceLimit) {
+        if (bounce >= bounceLimit || !scene.intersect(ray, isect)) {
             rp->weight = weight;
             rp->coeff  = coeff;
             rp->emission += weight * scene.envmap().sampleFromDir(ray.direction());
@@ -263,7 +265,6 @@ void ProgressivePhotonMapping::executePathTracing(const Scene& scene, const Came
             rp->normal = hitpoint.normal();
             rp->weight = weight;
             rp->coeff  = coeff;
-            // rp->emission += ; 
             break;
         } else {
             Vector3D nextDir;

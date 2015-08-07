@@ -36,8 +36,8 @@ public:
     bool intersect(const Ray& ray, Hitpoint* hitpoint) const override;
 
     double area() const override;
-
     IGeometry* clone() const override;
+    std::vector<Triangle> triangulate() const override;
 
     inline Vector3D p0() const { return _p0; }
     inline Vector3D p1() const { return _p1; }

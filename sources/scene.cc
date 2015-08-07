@@ -4,8 +4,7 @@
 #include <cstring>
     
 Scene::Scene()
-    : _lightIDs()
-    , _objects()
+    : _triangles()
     , _brdfs()
     , _envmap()
 {
@@ -15,45 +14,34 @@ Scene::Scene()
 
 Scene::~Scene()
 {
-    for (int i = 0; i < _objects.size(); i++) {
-        delete _objects[i];
-    }
 }
 
-const IGeometry* Scene::getObject(int id) const {
-    assert(id >= 0 && id < _objects.size() && "Object index out of bounds");
-    return _objects[id];
+const Triangle& Scene::getTriangle(int id) const {
+    assert(id >= 0 && id < _triangles.size() && "Triangle index out of bounds");
+    return _triangles[id];
 }
 
 const BRDF& Scene::getBrdf(int id) const {
-    assert(id >= 0 && id < _brdfs.size() && "Object index out of boudns");
-    return _brdfs[id];
+    assert(id >= 0 && id < _brdfIds.size() && "Object index out of boudns");
+    return _brdfs[_brdfIds[id]];
 }
 
 void Scene::clear() {
-    _lightIDs.clear();
-    for (int i = 0; i < _objects.size(); i++) {
-        delete _objects[i];
-    }
-    _objects.clear();
+    _triangles.clear();
+    _brdfIds.clear();
     _brdfs.clear();
 }
 
-bool Scene::intersect(const Ray& ray, Intersection& isect) const {
-    // Linear search
-    int objID = -1;
-    Hitpoint hitpoint;
-    for (int i = 0; i < _objects.size(); i++) {
-        Hitpoint hpTemp;
-        if (_objects[i]->intersect(ray, &hpTemp)) {
-            if (hitpoint.distance() > hpTemp.distance()) {
-                objID = i;
-                hitpoint = hpTemp;
-            }
-        }
-    }
+void Scene::setAccelerator() {
+    _accel = std::shared_ptr<QBVHAccel>(new QBVHAccel());
+    _accel->construct(_triangles);
+}
 
-    isect.setObjectId(objID);
+bool Scene::intersect(const Ray& ray, Intersection& isect) const {
+    Hitpoint hitpoint;
+    int triID = _accel->intersect(ray, &hitpoint);
+
+    isect.setObjectId(triID);
     isect.setHitpoint(hitpoint);
-    return objID != -1;
+    return triID != -1;
 }

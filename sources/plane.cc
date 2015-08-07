@@ -1,5 +1,7 @@
+#define PLANE_EXPORT
 #include "plane.h"
 #include "common.h"
+#include "triangle.h"
 
 #include <iostream>
 
@@ -47,6 +49,12 @@ double Plane::area() const {
     std::cerr << "Area of Plane geometry is INFTY. It can make unexpected results." << std::endl;
     std::abort();
     return INFTY;
+}
+
+std::vector<Triangle> Plane::triangulate() const {
+    std::cerr << "[ERROR] Plane cannot be triangulate!!" << std::endl;
+    std::abort();
+    return std::vector<Triangle>();
 }
 
 IGeometry* Plane::clone() const {

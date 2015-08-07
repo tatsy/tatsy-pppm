@@ -14,7 +14,7 @@
 
 #include "image.h"
 #include "scene.h"
-#include "orthogonal_camera.h"
+#include "perspective_camera.h"
 
 #include "random.h"
 #include "random_sequence.h"

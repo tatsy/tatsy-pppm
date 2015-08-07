@@ -46,16 +46,20 @@ namespace {
         bool operator()(const Triangle& t1, const Triangle& t2) const {
             return t1.gravity()[d] < t2.gravity()[d];
         }
+
+        bool operator()(const TriangleWithID& t1, const TriangleWithID& t2) const {
+            return t1.first.gravity()[d] < t2.first.gravity()[d];
+        }
     };
 
-    BBox enclosingBox(const std::vector<Triangle>& triangles) {
+    BBox enclosingBox(const std::vector<TriangleWithID>& triangles) {
         Vector3D posMin(INFTY, INFTY, INFTY);
         Vector3D posMax(-INFTY, -INFTY, -INFTY);
         const int nTri = (int)triangles.size();
         for (int i = 0; i < nTri; i++) {
             for (int j = 0; j < 3; j++) {
-                posMin = Vector3D::minimum(posMin, triangles[i].p(j));
-                posMax = Vector3D::maximum(posMax, triangles[i].p(j));
+                posMin = Vector3D::minimum(posMin, triangles[i].first.p(j));
+                posMax = Vector3D::maximum(posMax, triangles[i].first.p(j));
             }
         }
         return BBox(posMin, posMax);
@@ -121,9 +125,7 @@ QBVHAccel::QBVHNode* QBVHAccel::copyNode(QBVHNode* node) {
     if (node != NULL) {
         ret = new QBVHNode();
         memcpy((void*)ret->childBoxes, (void*)node->childBoxes, sizeof(__m128) * 6);
-        ret->numTriangles = node->numTriangles;
-        ret->triangles = new Triangle[node->numTriangles];
-        memcpy((void*)ret->triangles, (void*)node->triangles, sizeof(Triangle) * node->numTriangles);
+        ret->triangles = node->triangles;
         memcpy((void*)ret->sepAxes, (void*)node->sepAxes, sizeof(char) * 3);
         ret->isLeaf = node->isLeaf;
 
@@ -137,18 +139,21 @@ QBVHAccel::QBVHNode* QBVHAccel::copyNode(QBVHNode* node) {
 void QBVHAccel::construct(const std::vector<Triangle>& triangles) {
     release();
 
-    std::vector<Triangle> temp(triangles);
+    const int numTriangles = (int)triangles.size();
+    std::vector<TriangleWithID> temp(numTriangles);
+    for (int i = 0; i < numTriangles; i++) {
+        temp[i] = TriangleWithID(triangles[i], i);
+    }
     _root = constructRec(temp, 0);
 }
     
-QBVHAccel::QBVHNode* QBVHAccel::constructRec(std::vector<Triangle>& triangles, int dim) {
+QBVHAccel::QBVHNode* QBVHAccel::constructRec(std::vector<TriangleWithID>& triangles, int dim) {
     const int nTri = static_cast<int>(triangles.size());
 
     if (triangles.size() <= _maxNodeSize) {
         QBVHNode* node = new QBVHNode();
-        node->numTriangles = nTri;
-        node->triangles = new Triangle[nTri];
-        memcpy((void*)node->triangles, (void*)&triangles[0], sizeof(Triangle) * nTri);
+        node->triangles.resize(nTri);
+        std::copy(triangles.begin(), triangles.end(), node->triangles.begin());
         node->isLeaf = true;
         return node;
     }
@@ -159,10 +164,10 @@ QBVHAccel::QBVHNode* QBVHAccel::constructRec(std::vector<Triangle>& triangles, i
     std::sort(triangles.begin(), triangles.begin() + mid, AxisComparator((dim + 1) % 3));
     std::sort(triangles.begin() + mid, triangles.end(), AxisComparator((dim + 1) % 3));
 
-    std::vector<Triangle> c0(triangles.begin(), triangles.begin() + (mid / 2));
-    std::vector<Triangle> c1(triangles.begin() + (mid / 2), triangles.begin() + mid);
-    std::vector<Triangle> c2(triangles.begin() + mid, triangles.begin() + (mid + mid / 2));
-    std::vector<Triangle> c3(triangles.begin() + (mid + mid / 2), triangles.end());
+    std::vector<TriangleWithID> c0(triangles.begin(), triangles.begin() + (mid / 2));
+    std::vector<TriangleWithID> c1(triangles.begin() + (mid / 2), triangles.begin() + mid);
+    std::vector<TriangleWithID> c2(triangles.begin() + mid, triangles.begin() + (mid + mid / 2));
+    std::vector<TriangleWithID> c3(triangles.begin() + (mid + mid / 2), triangles.end());
 
     BBox boxes[4];
     boxes[0] = enclosingBox(c0);
@@ -189,8 +194,7 @@ QBVHAccel::QBVHNode* QBVHAccel::constructRec(std::vector<Triangle>& triangles, i
     node->children[1] = constructRec(c1, (dim + 2) % 3);
     node->children[2] = constructRec(c2, (dim + 2) % 3);
     node->children[3] = constructRec(c3, (dim + 2) % 3);
-    node->numTriangles = 0;
-    node->triangles = NULL;
+    node->triangles.clear();
     node->sepAxes[0] = (char)dim;
     node->sepAxes[1] = (char)((dim + 1) % 3);
     node->sepAxes[2] = (char)((dim + 1) % 3);
@@ -198,7 +202,7 @@ QBVHAccel::QBVHNode* QBVHAccel::constructRec(std::vector<Triangle>& triangles, i
     return node;
 }
 
-bool QBVHAccel::intersect(const Ray& ray, Hitpoint* hitpoint) const {
+int QBVHAccel::intersect(const Ray& ray, Hitpoint* hitpoint) const {
     // ray for SIMD arthimetic
     __m128 simdOrig[3];  // origin
     __m128 simdIdir[3];  // inverse direction
@@ -232,7 +236,7 @@ bool QBVHAccel::intersect(const Ray& ray, Hitpoint* hitpoint) const {
     sgn[1] = idiry > 0.0f ? 0 : 1;
     sgn[2] = idirz > 0.0f ? 0 : 1;
 
-    bool hit = false;
+    int hit = -1;
     std::stack<QBVHNode*> stk;
     stk.push(_root);
     while(!stk.empty()) {
@@ -241,19 +245,15 @@ bool QBVHAccel::intersect(const Ray& ray, Hitpoint* hitpoint) const {
 
         if (node->isLeaf) {
             int triID = -1;
-            for (int i = 0; i < node->numTriangles; i++) {
-                const Triangle& tri = node->triangles[i];
+            for (int i = 0; i < node->triangles.size(); i++) {
+                const Triangle& tri = node->triangles[i].first;
                 Hitpoint hpTemp;
                 if (tri.intersect(ray, &hpTemp)) {
                     if (hitpoint->distance() > hpTemp.distance() && Vector3D::dot(ray.direction(), tri.normal()) < 0.0) {
                         *hitpoint = hpTemp;
-                        triID = i;
+                        hit = node->triangles[i].second;
                     }
                 }
-            }
-
-            if (triID != -1) {
-                hit = true;
             }
             continue;
         }

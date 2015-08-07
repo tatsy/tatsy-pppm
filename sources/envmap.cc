@@ -54,7 +54,7 @@ Vector3D Envmap::sampleFromDir(const Vector3D& dir) const {
     const double iblx = clamp(iblu * _image.width(), 0.0, _image.width() - 1.0);
     const double ibly = clamp(iblv * _image.height(), 0.0, _image.height() - 1.0);
 
-    return _image(iblx, ibly);
+    return _image((int)iblx, (int)ibly);
 }
 
 Photon Envmap::samplePhoton(RandomSequence& rseq, const int numPhotons) const {
@@ -72,7 +72,8 @@ Photon Envmap::samplePhoton(RandomSequence& rseq, const int numPhotons) const {
     const double u = static_cast<double>(ix + rseq.pop()) / width;
     const double v = static_cast<double>(iy + rseq.pop()) / height;
 
-    const double phi = u * 2.0 * PI;
+    const double phi = u * PI * 2.0;
+    
     const double y   = (1.0 - v) * 2.0 - 1.0;
     const Vector3D dir = Vector3D(sqrt(1.0 - y * y) * cos(phi), y, sqrt(1.0 - y * y) * sin(phi));
     const double area = (4.0 * PI * R * R) / (width * height);

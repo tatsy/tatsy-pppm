@@ -34,7 +34,7 @@ protected:
 public:
     virtual ~BRDFBase() {}
     virtual Vector3D reflectance() const = 0;
-    virtual void sample(const Vector3D& in, const Vector3D& normal, const double rand1, const double rand2, Vector3D* out) const = 0;
+    virtual void sample(const Vector3D& in, const Vector3D& orientNormal, const double rand1, const double rand2, Vector3D* out) const = 0;
     virtual BrdfType type() const = 0;
     virtual BRDFBase* clone() const = 0;
 };
@@ -47,7 +47,7 @@ private:
 public:
     static BRDF factory(const Vector3D& reflectance);
     Vector3D reflectance() const override;
-    void sample(const Vector3D& in, const Vector3D& normal, const double rand1, const double rand2, Vector3D* out) const override;
+    void sample(const Vector3D& in, const Vector3D& orinentNormal, const double rand1, const double rand2, Vector3D* out) const override;
     BrdfType type() const override;
     BRDFBase* clone() const override;
 
@@ -63,7 +63,7 @@ private:
 public:
     static BRDF factory(const Vector3D& reflectance);
     Vector3D reflectance() const override;
-    void sample(const Vector3D& in, const Vector3D& normal, const double rand1, const double rand2, Vector3D* out) const override;
+    void sample(const Vector3D& in, const Vector3D& orientNormal, const double rand1, const double rand2, Vector3D* out) const override;
     BrdfType type() const override;
     BRDFBase* clone() const override;
 
@@ -80,7 +80,7 @@ private:
 public:
     static BRDF factory(const Vector3D& reflectance, const double n);
     Vector3D reflectance() const override;
-    void sample(const Vector3D& in, const Vector3D& normal, const double rand1, const double rand2, Vector3D* out) const override;
+    void sample(const Vector3D& in, const Vector3D& orientNormal, const double rand1, const double rand2, Vector3D* out) const override;
     BrdfType type() const override;
     BRDFBase* clone() const override;
 
@@ -99,7 +99,7 @@ public:
 
     BRDF& operator=(const BRDF& brdf);
     Vector3D reflectance() const;
-    void sample(const Vector3D& in, const Vector3D& normal, const double rand1, const double rand2, Vector3D* out) const;
+    void sample(const Vector3D& in, const Vector3D& orientNormal, const double rand1, const double rand2, Vector3D* out) const;
     BrdfType type() const;
 
 private:

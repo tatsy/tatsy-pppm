@@ -2,22 +2,26 @@
 #define _RANDOM_SEQUENCE_H_
 
 #include <cassert>
-#include <queue>
+#include <vector>
 
 #include "random.h"
 
 class RandomSequence {
 private:
-    std::queue<double> que;
+    int pos;
+    std::vector<double> que;
 
 public:
     RandomSequence()
-        : que()
+        : pos(0)
+        , que()
+
     {
     }
 
     RandomSequence(const RandomSequence& rseq)
-        : que(rseq.que)
+        : pos(rseq.pos)
+        , que(rseq.que)
     {
     }
 
@@ -26,22 +30,35 @@ public:
     }
 
     RandomSequence& operator=(const RandomSequence& rseq) {
+        pos = rseq.pos;
         que = rseq.que;
         return *this;
     }
 
     void add(Random& rand, int n) {
+        que.resize(n);
         for (int i = 0; i < n; i++) {
-            que.push(rand.nextReal());
+            que[i] = rand.nextReal();
         }
+        pos = 0;
+    }
+
+    void set(int i, double val) {
+        assert(0 <= i && i < que.size() && "Sample index out of bounds!!");
+        que[i] = val;
+    }
+
+    void reset() {
+        pos = 0;
+    }
+
+    void resize(int n) {
+        que.resize(n);
     }
 
     double pop() {
-        assert(!que.empty(), "Sequence is empty!!");
-
-        double ret = que.front();
-        que.pop();
-        return ret;
+        assert(pos < que.size(), "Sequence is empty!!");
+        return que[pos++];
     }
 };
 

@@ -12,21 +12,23 @@
 #endif
 
 #include <vector>
-
-#include "geometry_interface.h"
+#include <memory>
 
 #include "common.h"
 #include "vector3d.h"
+#include "triangle.h"
+#include "qbvh_accel.h"
+
 #include "ray.h"
 #include "brdf.h"
 #include "envmap.h"
     
 class SCENE_DLL Scene {
 private:
-    std::vector<int>        _lightIDs;
-    std::vector<IGeometry*> _objects;
-    std::vector<BRDF>       _brdfs;
-
+    std::vector<Triangle>      _triangles;
+    std::vector<int>           _brdfIds;
+    std::vector<BRDF>          _brdfs;
+    std::shared_ptr<QBVHAccel> _accel;
     Envmap _envmap;
 
 public:
@@ -34,24 +36,27 @@ public:
     ~Scene();
 
     template <class Ty>
-    void add(const Ty& primitive, const BRDF& brdf, bool isLight = false) {
+    void add(const Ty& primitive, const BRDF& brdf) {
         static_assert(std::is_base_of<IGeometry, Ty>::value, "Type inherits IGeometry can only be added to the scene.");
-        
-        if (isLight) {
-            _lightIDs.push_back(_objects.size());
-        }
-        _objects.push_back(primitive.clone());
+
+        std::vector<Triangle> newTriangles = primitive.triangulate();
+        _triangles.insert(_triangles.end(), newTriangles.begin(), newTriangles.end());
+
+        const int newBrdfId = (int)_brdfs.size();
+        const int numTriangles = (int)_brdfIds.size();
+        _brdfIds.resize(_brdfIds.size() + newTriangles.size());
+        std::fill(_brdfIds.begin() + numTriangles, _brdfIds.end(), newBrdfId);
         _brdfs.push_back(brdf);
     }
 
-    const IGeometry* getObject(int id) const;
-    const BRDF& getBrdf(int id) const;
+    const Triangle& getTriangle(int triangleId) const;
+    const BRDF& getBrdf(int triangleId) const;
 
     void clear();
+    void setAccelerator();
 
     bool intersect(const Ray& ray, Intersection& isect) const;
 
-    inline int numObjects() const { return (int)_objects.size(); }
     inline const Envmap& envmap() const { return _envmap; }
     inline void setEnvmap(const Envmap& envmap) { _envmap = envmap; }
 

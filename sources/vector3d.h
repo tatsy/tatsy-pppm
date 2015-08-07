@@ -19,12 +19,16 @@
 class VECTOR_3D_DLL Vector3D {
 private:
 
+#if defined(ENABLE_SSE2) && (defined(_M_AMD64) || defined(_M_X64))
     union m128 {
         __m128 d;
         align_attrib(float,16) v[4];
     };
 
     m128 xyz;
+#else
+    double _x, _y, _z;
+#endif
 
 public:
     Vector3D();
@@ -54,15 +58,15 @@ public:
     static Vector3D minimum(const Vector3D& u, const Vector3D& v);
     static Vector3D maximum(const Vector3D& u, const Vector3D& v);
 
-    inline double x() const { return xyz.v[0]; }
-    inline double y() const { return xyz.v[1]; }
-    inline double z() const { return xyz.v[2]; }
+    inline double x() const;
+    inline double y() const;
+    inline double z() const;
 
-    inline void setX(double x) { xyz.v[0] = (float)x; }
-    inline void setY(double y) { xyz.v[1] = (float)y; }
-    inline void setZ(double z) { xyz.v[2] = (float)z; }
+    inline void setX(double x);
+    inline void setY(double y);
+    inline void setZ(double z);
 
-    inline double operator[](int d) const { return xyz.v[d]; }
+    inline double operator[](int d) const;
 
     std::string toString() const;
 };

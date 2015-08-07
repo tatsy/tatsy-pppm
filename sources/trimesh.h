@@ -106,6 +106,9 @@ public:
     // Cloning trimesh
     IGeometry* clone() const override;
 
+    // Triangulate mesh
+    std::vector<Triangle> triangulate() const override;
+
     // Build accelerator structure
     void buildAccel();
 

@@ -83,6 +83,10 @@ double Triangle::area() const {
     return 0.5 * Vector3D::cross(e1, e2).norm();
 }
 
+std::vector<Triangle> Triangle::triangulate() const {
+    return std::move(std::vector<Triangle>(1, *this));
+}
+
 IGeometry* Triangle::clone() const {
     return new Triangle(*this);
 }

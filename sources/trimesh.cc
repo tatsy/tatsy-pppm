@@ -96,6 +96,15 @@ double Trimesh::area() const {
     return ret;
 }
 
+std::vector<Triangle> Trimesh::triangulate() const {
+    const int numTriangles = (int)_faces.size();
+    std::vector<Triangle> triangles(numTriangles);
+    for (int i = 0; i < numTriangles; i++) {
+        triangles[i] = getTriangle(i);
+    }
+    return std::move(triangles);
+}
+
 IGeometry* Trimesh::clone() const {
     return new Trimesh(*this);
 }

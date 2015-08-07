@@ -2,26 +2,28 @@
 #define _QBVH_ACCEL_H_
 
 #include <cstdlib>
+#include <map>
 #include <vector>
 #include <xmmintrin.h>
 
 #include "triangle.h"
 
+typedef std::pair<Triangle, int> TriangleWithID;
+
 class QBVHAccel {
 private:
+
     struct QBVHNode {
-        __m128 childBoxes[2][3];  // [min-max][x-y-z]
-        QBVHNode* children[4];    // Child nodes
-        Triangle* triangles;
-        int  numTriangles;
+        __m128 childBoxes[2][3];    // [min-max][x-y-z]
+        QBVHNode* children[4];      // Child nodes
+        std::vector<TriangleWithID> triangles;        
         char sepAxes[3];          // top-left-right
         bool isLeaf;
 
         QBVHNode()
             : childBoxes()
             , children()
-            , triangles(NULL)
-            , numTriangles(0)
+            , triangles()
             , sepAxes()
             , isLeaf(false)
         {
@@ -29,7 +31,6 @@ private:
 
         ~QBVHNode()
         {
-            delete[] triangles;
         }
     };
 
@@ -47,14 +48,17 @@ public:
 
     void construct(const std::vector<Triangle>& triangles);
 
-    bool intersect(const Ray& ray, Hitpoint* hitpoint) const;
+    // Intersection test
+    // If ray is intersected, then return the index of the triangle.
+    // If not, then return -1.
+    int intersect(const Ray& ray, Hitpoint* hitpoint) const;
 
 private:
     void release();
     void deleteNode(QBVHNode* node);
     QBVHNode* copyNode(QBVHNode* node);
         
-    QBVHNode* constructRec(std::vector<Triangle>& triangles, int dim);
+    QBVHNode* constructRec(std::vector<TriangleWithID>& triangles, int dim);
 };
 
 #endif  // _SPICA_QBVH_ACCEL_H_
