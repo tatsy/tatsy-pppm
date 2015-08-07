@@ -17,6 +17,7 @@ class BRDFBase;
 class BSSRDF;
 
 enum BsdfType {
+    BSDF_TYPE_NONE,
     BSDF_TYPE_LAMBERTIAN_BRDF,
     BSDF_TYPE_SPECULAR_BRDF,
     BSDF_TYPE_PHONG_BRDF,
@@ -26,7 +27,8 @@ enum BsdfType {
 class BSDF_DLL BSDF {
 private:
     const BRDFBase* _ptr;
-    const BSSRDF* _bssrdf;
+    const BSSRDF*   _bssrdf;
+    BsdfType        _type;
 
 public:
     BSDF();
@@ -38,8 +40,10 @@ public:
     void sample(const Vector3D& in, const Vector3D& orientNormal, const double rand1, const double rand2, Vector3D* out) const;
     BsdfType type() const;
 
+    void setBssrdf(const BSSRDF& bssrdf);
+
 private:
-    explicit BSDF(const BRDFBase* ptr);
+    BSDF(const BRDFBase* ptr, BsdfType type);
 
     // Friend classes
     friend class LambertianBRDF;

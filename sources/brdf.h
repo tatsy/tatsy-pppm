@@ -18,8 +18,6 @@
 // Interface class for BRDF object
 class BRDFBase {
 protected:
-
-protected:
     BRDFBase() {}
     explicit BRDFBase(const BRDFBase&) {}
 
@@ -27,20 +25,17 @@ public:
     virtual ~BRDFBase() {}
     virtual Vector3D reflectance() const = 0;
     virtual void sample(const Vector3D& in, const Vector3D& orientNormal, const double rand1, const double rand2, Vector3D* out) const = 0;
-    virtual BsdfType type() const = 0;
     virtual BRDFBase* clone() const = 0;
 };
 
 class BRDF_DLL LambertianBRDF : public BRDFBase {
 private:
-    static BsdfType _type;
     Vector3D _reflectance;
 
 public:
     static BSDF factory(const Vector3D& reflectance);
     Vector3D reflectance() const override;
     void sample(const Vector3D& in, const Vector3D& orinentNormal, const double rand1, const double rand2, Vector3D* out) const override;
-    BsdfType type() const override;
     BRDFBase* clone() const override;
 
 private:
@@ -49,14 +44,12 @@ private:
 
 class BRDF_DLL SpecularBRDF : public BRDFBase {
 private:
-    static BsdfType _type;
     Vector3D _reflectance;
 
 public:
     static BSDF factory(const Vector3D& reflectance);
     Vector3D reflectance() const override;
     void sample(const Vector3D& in, const Vector3D& orientNormal, const double rand1, const double rand2, Vector3D* out) const override;
-    BsdfType type() const override;
     BRDFBase* clone() const override;
 
 private:
@@ -65,7 +58,6 @@ private:
 
 class BRDF_DLL PhongBRDF : public BRDFBase {
 private:
-    static BsdfType _type;
     Vector3D _reflectance;
     double _coeffN;
 
@@ -73,7 +65,6 @@ public:
     static BSDF factory(const Vector3D& reflectance, const double n);
     Vector3D reflectance() const override;
     void sample(const Vector3D& in, const Vector3D& orientNormal, const double rand1, const double rand2, Vector3D* out) const override;
-    BsdfType type() const override;
     BRDFBase* clone() const override;
 
 private:

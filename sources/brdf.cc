@@ -10,8 +10,6 @@
 // Lambertian BRDF
 // --------------------------------------------------
 
-BsdfType LambertianBRDF::_type = BSDF_TYPE_LAMBERTIAN_BRDF;
-
 LambertianBRDF::LambertianBRDF(const Vector3D& reflectance)
     : _reflectance(reflectance)
 {
@@ -25,23 +23,17 @@ void LambertianBRDF::sample(const Vector3D& in, const Vector3D& normal, const do
     sampler::onHemisphere(normal, out, rand1, rand2);
 }
 
-BsdfType LambertianBRDF::type() const {
-    return _type;
-}
-
 BRDFBase* LambertianBRDF::clone() const {
     return new LambertianBRDF(_reflectance);
 }
 
 BSDF LambertianBRDF::factory(const Vector3D& reflectance) {
-    return BSDF(new LambertianBRDF(reflectance));
+    return BSDF(new LambertianBRDF(reflectance), BSDF_TYPE_LAMBERTIAN_BRDF);
 }
 
 // --------------------------------------------------
 // Specular BRDF
 // --------------------------------------------------
-
-BsdfType SpecularBRDF::_type = BSDF_TYPE_SPECULAR_BRDF;
 
 SpecularBRDF::SpecularBRDF(const Vector3D& reflectance)
     : _reflectance(reflectance)
@@ -56,23 +48,17 @@ void SpecularBRDF::sample(const Vector3D& in, const Vector3D& normal, const doub
     (*out) = Vector3D::reflect(in, normal);
 }
 
-BsdfType SpecularBRDF::type() const {
-    return _type;
-}
-
 BRDFBase* SpecularBRDF::clone() const {
     return new SpecularBRDF(_reflectance);
 }
 
 BSDF SpecularBRDF::factory(const Vector3D& reflectance) {
-    return BSDF(new SpecularBRDF(reflectance));
+    return BSDF(new SpecularBRDF(reflectance), BSDF_TYPE_SPECULAR_BRDF);
 }
 
 // --------------------------------------------------
 // Phong BRDF
 // --------------------------------------------------
-
-BsdfType PhongBRDF::_type = BSDF_TYPE_PHONG_BRDF;
 
 PhongBRDF::PhongBRDF(const Vector3D& reflectance, const double n)
     : _reflectance(reflectance)
@@ -103,14 +89,10 @@ void PhongBRDF::sample(const Vector3D& in, const Vector3D& normal, const double 
     (*out) = u * sin(theta) * cos(phi) + w * cos(theta) + v * sin(theta) * sin(phi);
 }
 
-BsdfType PhongBRDF::type() const {
-    return _type;
-}
-
 BRDFBase* PhongBRDF::clone() const {
     return new PhongBRDF(_reflectance, _coeffN);
 }
 
 BSDF PhongBRDF::factory(const Vector3D& reflectance, const double n) {
-    return BSDF(new PhongBRDF(reflectance, n));
+    return BSDF(new PhongBRDF(reflectance, n), BSDF_TYPE_PHONG_BRDF);
 }

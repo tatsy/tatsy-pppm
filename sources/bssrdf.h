@@ -46,20 +46,20 @@ public:
 class BSSRDF_DLL DipoleBSSRDF : public BSSRDFBase {
 private:
     double _A;
-    double _sigmap_t;
-    double _sigma_tr;
-    double _alphap;
-    double _zpos;
-    double _zneg;
+    Vector3D _sigmap_t;
+    Vector3D _sigma_tr;
+    Vector3D _alphap;
+    Vector3D _zpos;
+    Vector3D _zneg;
 
 private:
     DipoleBSSRDF();
-    DipoleBSSRDF(double sigma_a, double sigmap_s, double eta = 1.3);
+    DipoleBSSRDF(const Vector3D& sigma_a, const Vector3D& sigmap_s, double eta = 1.3);
     DipoleBSSRDF(const DipoleBSSRDF& bssrdf);
     DipoleBSSRDF& operator=(const DipoleBSSRDF& bssrdf);
 
 public:
-    static BSSRDF factory(double sigma_a, double sigmap_s, double eta = 1.3);
+    static BSSRDF factory(const Vector3D& sigma_a, const Vector3D& sigmap_s, double eta = 1.3);
     Vector3D operator()(const double d2) const override;
     BSSRDFBase* clone() const override;
 };

@@ -116,7 +116,7 @@ public:
     SubsurfaceIntegrator();
     ~SubsurfaceIntegrator();
 
-    void initialize(const Scene& scene, const BSSRDF& bssrdf, const RenderParameters& params, const double areaRadius, const double maxError = 0.05);
+    void initialize(const Scene& scene, const RenderParameters& params, const double areaRadius, const double maxError = 0.05);
 
     void buildOctree(const std::vector<Vector3D>& points, const std::vector<Vector3D>& normals, const RenderParameters& params);
 

@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <sstream>
 
+#include "common.h"
+
 Vector3D::Vector3D()
     : _x(0.0)
     , _y(0.0)
@@ -43,7 +45,7 @@ Vector3D Vector3D::cross(const Vector3D& u, const Vector3D& v) {
 }
 
 double Vector3D::norm() const {
-    return sqrt(squaredNorm());
+    return ::sqrt(squaredNorm());
 }
 
 double Vector3D::squaredNorm() const {
@@ -51,7 +53,7 @@ double Vector3D::squaredNorm() const {
 }
 
 Vector3D Vector3D::normalized() const {
-    return *this / norm();
+    return *this / (norm() + EPS);
 }
 
 Vector3D Vector3D::reflect(const Vector3D& v, const Vector3D& n) {
@@ -70,6 +72,14 @@ Vector3D Vector3D::maximum(const Vector3D& u, const Vector3D& v) {
     const double ry = std::max(u._y, v._y);
     const double rz = std::max(u._z, v._z);
     return Vector3D(rx, ry, rz);
+}
+
+Vector3D Vector3D::sqrt(const Vector3D& v) {
+    return Vector3D(::sqrt(v._x), ::sqrt(v._y), ::sqrt(v._z));
+}
+
+Vector3D Vector3D::exp(const Vector3D& v) {
+    return Vector3D(::exp(v._x), ::exp(v._y), ::exp(v._z));
 }
 
 double Vector3D::x() const { return _x; }
@@ -139,9 +149,10 @@ Vector3D& Vector3D::operator/=(const Vector3D& v) {
 
 Vector3D& Vector3D::operator/=(double s) {
     assert(s != 0.0 && "Zero division!!");
-    this->_x /= s;
-    this->_y /= s;
-    this->_z /= s;
+    double d = 1.0 / s;
+    this->_x *= d;
+    this->_y *= d;
+    this->_z *= d;
     return *this;
 }
 

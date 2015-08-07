@@ -15,20 +15,22 @@
 #include "scene.h"
 #include "perspective_camera.h"
 #include "render_parameters.h"
+#include "subsurface_integrator.h"
 
 class PATH_TRACING_DLL PathTracing {
 private:
     Image _result;
+    SubsurfaceIntegrator* _integrator;
 
 public:
     PathTracing();
     ~PathTracing();
 
-    void render(const Scene& scene, const Camera& camera, const RenderParameters& params);
+    void render(const Scene& scene, const Camera& camera, const RenderParameters& params, bool enableBSSRDF = false);
 
 private:
-    static Vector3D executePathTracing(const Scene& scene, const Camera& camera, double pixelX, double pixelY, RandomSequence& rseq);
-    static Vector3D radiance(const Scene& scene, const Ray& ray, RandomSequence& rseq, int bounces, int bounceLimit = 64, int bounceMin = 6);
+    Vector3D executePathTracing(const Scene& scene, const Camera& camera, double pixelX, double pixelY, RandomSequence& rseq) const;
+    Vector3D radiance(const Scene& scene, const Ray& ray, RandomSequence& rseq, int bounces, int bounceLimit = 64, int bounceMin = 5) const;
 };
 
 #endif  // _PATH_TRACING_H_

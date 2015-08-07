@@ -56,6 +56,9 @@ public:
     static Vector3D minimum(const Vector3D& u, const Vector3D& v);
     static Vector3D maximum(const Vector3D& u, const Vector3D& v);
 
+    static Vector3D sqrt(const Vector3D& v);
+    static Vector3D exp(const Vector3D& v);
+
     inline double x() const;
     inline double y() const;
     inline double z() const;

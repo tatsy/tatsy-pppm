@@ -16,6 +16,7 @@ static const double PI    = 4.0 * atan(1.0);
 static const double invPI = 1.0 / PI;
 static const double IOR_OBJECT = 1.5;
 static const double IOR_VACCUM = 1.0;
+static const double REFLECT_PROBABILITY = 0.5;
 
 // ----------------------------------------------------------------------------
 // Special functions

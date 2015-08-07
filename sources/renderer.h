@@ -12,6 +12,8 @@
 #include "orthogonal_camera.h"
 #include "perspective_camera.h"
 
+#include "bssrdf.h"
+
 #include "path_tracing.h"
 #include "progressive_photon_mapping.h"
 

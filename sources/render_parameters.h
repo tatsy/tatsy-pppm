@@ -8,7 +8,7 @@ private:
     double _gatherRadius;
 
 public:
-    explicit RenderParameters(int photons = 1000000, int spp = 16, double gatherRadius = 5.0)
+    explicit RenderParameters(int photons = 1000000, int spp = 16, double gatherRadius = 16.0)
         : _photons(photons)
         , _spp(spp)
         , _gatherRadius(gatherRadius)

@@ -42,31 +42,31 @@ double BSSRDFBase::Fdr() const {
 // BSSRDF with dipole approximation
 // ------------------------------------------------------------
 
-DipoleBSSRDF::DipoleBSSRDF(double sigma_a, double sigmap_s, double eta)
+DipoleBSSRDF::DipoleBSSRDF(const Vector3D& sigma_a, const Vector3D& sigmap_s, double eta)
     : BSSRDFBase(eta)
     , _A(0.0)
-    , _sigmap_t(0.0)
-    , _sigma_tr(0.0)
-    , _alphap(0.0)
-    , _zpos(0.0)
-    , _zneg(0.0)
+    , _sigmap_t()
+    , _sigma_tr()
+    , _alphap()
+    , _zpos()
+    , _zneg()
 {
     _A = (1.0 + Fdr()) / (1.0 - Fdr());
     _sigmap_t = sigma_a + sigmap_s;
-    _sigma_tr = sqrt(3.0 * sigma_a * _sigmap_t);
+    _sigma_tr = Vector3D::sqrt(3.0 * sigma_a * _sigmap_t);
     _alphap = sigmap_s / _sigmap_t;
-    _zpos = 1.0 / _sigmap_t;
+    _zpos = Vector3D(1.0, 1.0, 1.0) / _sigmap_t;
     _zneg = _zpos * (1.0 + (4.0 / 3.0) * _A);
 }
 
 DipoleBSSRDF::DipoleBSSRDF(const DipoleBSSRDF& bssrdf)
     : BSSRDFBase()
     , _A(0.0)
-    , _sigmap_t(0.0)
-    , _sigma_tr(0.0)
-    , _alphap(0.0)
-    , _zpos(0.0)
-    , _zneg(0.0)
+    , _sigmap_t()
+    , _sigma_tr()
+    , _alphap()
+    , _zpos()
+    , _zneg()
 {
     this->operator=(bssrdf);
 }
@@ -82,19 +82,19 @@ DipoleBSSRDF& DipoleBSSRDF::operator=(const DipoleBSSRDF& bssrdf) {
     return *this;
 }
 
-BSSRDF DipoleBSSRDF::factory(double sigma_a, double sigmap_s, double eta) {
+BSSRDF DipoleBSSRDF::factory(const Vector3D& sigma_a, const Vector3D& sigmap_s, double eta) {
     return BSSRDF(new DipoleBSSRDF(sigma_a, sigmap_s, eta));
 }
 
 Vector3D DipoleBSSRDF::operator()(const double d2) const {
-    double dpos = sqrt(d2 + _zpos * _zpos);
-    double dneg = sqrt(d2 + _zneg * _zneg);
-    double posTerm = _zpos * (dpos * _sigma_tr + 1.0) * exp(-_sigma_tr * dpos) / (dpos * dpos * dpos);
-    double negTerm = _zneg * (dneg * _sigma_tr + 1.0) * exp(-_sigma_tr * dneg) / (dneg * dneg * dneg);
-    double ret = (_alphap / (4.0 * PI * _sigma_tr)) * (posTerm + negTerm);
-
-    // TODO: it should be revised for multi color channels
-    return Vector3D(ret, ret, ret);    
+    const Vector3D ones(1.0, 1.0, 1.0);
+    const Vector3D d2v(d2, d2, d2);
+    Vector3D dpos = Vector3D::sqrt(d2v + _zpos * _zpos);
+    Vector3D dneg = Vector3D::sqrt(d2v + _zneg * _zneg);
+    Vector3D posTerm = _zpos * (dpos * _sigma_tr + ones) * Vector3D::exp(-_sigma_tr * dpos) / (dpos * dpos * dpos);
+    Vector3D negTerm = _zneg * (dneg * _sigma_tr + ones) * Vector3D::exp(-_sigma_tr * dneg) / (dneg * dneg * dneg);
+    Vector3D ret = (_alphap / (4.0 * PI * _sigma_tr)) * (posTerm + negTerm);
+    return ret;
 }
 
 BSSRDFBase* DipoleBSSRDF::clone() const {

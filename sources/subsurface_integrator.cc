@@ -173,7 +173,7 @@ SubsurfaceIntegrator::~SubsurfaceIntegrator()
 {
 }
 
-void SubsurfaceIntegrator::initialize(const Scene& scene, const BSSRDF& bssrdf_, const RenderParameters& params, const double areaRadius, const double maxError) {
+void SubsurfaceIntegrator::initialize(const Scene& scene, const RenderParameters& params, const double areaRadius, const double maxError) {
     // Poisson disk sampling on SSS objects
     int objectID = -1;
     std::vector<Vector3D> points;
@@ -237,9 +237,8 @@ void SubsurfaceIntegrator::buildOctree(const std::vector<Vector3D>& points, cons
 
 Vector3D SubsurfaceIntegrator::irradiance(const Vector3D& p, const BSDF& bsdf) const {
     assert(bsdf._bssrdf != NULL && "Specified object does not have BSSRDF!!");
-    // Vector3D Mo = octree.iradSubsurface(p, *bsdf._bssrdf);
-    // return Vector3D((1.0 / PI) * (1.0 - bsdf._bssrdf->Fdr()) * Mo);
-    return Vector3D();
+    Vector3D Mo = octree.iradSubsurface(p, *bsdf._bssrdf);
+    return Vector3D((1.0 / PI) * (1.0 - bsdf._bssrdf->Fdr()) * Mo);
 }
 
 void SubsurfaceIntegrator::buildPhotonMap(const Scene& scene, const int numPhotons, const int bounceLimit) {
