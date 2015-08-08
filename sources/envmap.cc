@@ -31,7 +31,7 @@ Envmap::Envmap(const std::string& filename)
     , _pdf()
     , _cdf()
 {
-    _image.loadHDR(filename);
+    _image.load(filename);
     createImportanceMap();
 }
 
@@ -69,16 +69,16 @@ Photon Envmap::samplePhoton(RandomSequence& rseq, const int numPhotons) const {
     // Direction
     const int ix = index % width;
     const int iy = index / width;
-    const double u = static_cast<double>(ix + rseq.pop()) / width;
-    const double v = static_cast<double>(iy + rseq.pop()) / height;
+    const double u = (ix + rseq.pop()) / width;
+    const double v = (iy + rseq.pop()) / height;
 
     const double phi = u * PI * 2.0;
     
     const double   y    = (1.0 - v) * 2.0 - 1.0;
     const Vector3D dir  = Vector3D(sqrt(1.0 - y * y) * cos(phi), y, sqrt(1.0 - y * y) * sin(phi));
-    const double   area = (4.0 * PI * R * R) / (width * height);
+    const double   area = (_image.width() * _image.height()) / (4.0 * PI * width * height);
     const double   pdf  = _pdf[index];
-    const Vector3D currentFlux = sampleFromDir(dir) * (area * PI / (pdf * numPhotons));
+    const Vector3D currentFlux = sampleFromDir(dir) * (area / (pdf * numPhotons));
 
     return Photon(R * dir, currentFlux, -dir, -dir);                
 }

@@ -35,7 +35,7 @@ Triangle& Triangle::operator=(const Triangle& tri) {
 }
 
 Vector3D Triangle::p(int id) const {
-    assert(0 <= id && id <= 2 && "ID must be between 0 and 2");
+    Assertion(0 <= id && id <= 2, "ID must be between 0 and 2");
     if (id == 0) return _p0;
     if (id == 1) return _p1;
     if (id == 2) return _p2;

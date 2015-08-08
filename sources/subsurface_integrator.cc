@@ -189,7 +189,7 @@ void SubsurfaceIntegrator::initialize(const Scene& scene, const RenderParameters
             triangles.push_back(scene.getTriangle(i));            
         }
     }
-    assert(!triangles.empty() && "The scene does not have subsurface scattering object!!");
+    Assertion(!triangles.empty(), "The scene does not have subsurface scattering object!!");
 
     // Poisson disk sampling
     sampler::poissonDisk(triangles, areaRadius, &points, &normals);
@@ -238,7 +238,7 @@ void SubsurfaceIntegrator::buildOctree(const std::vector<Vector3D>& points, cons
 }
 
 Vector3D SubsurfaceIntegrator::irradiance(const Vector3D& p, const BSDF& bsdf) const {
-    assert(bsdf._bssrdf != NULL && "Specified object does not have BSSRDF!!");
+    Assertion(bsdf._bssrdf != NULL, "Specified object does not have BSSRDF!!");
     Vector3D Mo = octree.iradSubsurface(p, *bsdf._bssrdf);
     return Vector3D((1.0 / PI) * (1.0 - bsdf._bssrdf->Fdr()) * Mo);
 }
@@ -298,7 +298,8 @@ void SubsurfaceIntegrator::buildPhotonMap(const Scene& scene, const int numPhoto
                 }
                 break;
             } else {
-                bsdf.sample(currentRay.direction(), orientNormal, rands[0], rands[1], &nextDir);
+                double pdf = 1.0;
+                bsdf.sample(currentRay.direction(), orientNormal, rands[0], rands[1], &nextDir, &pdf);
                 currentRay = Ray(hitpoint.position(), nextDir);
                 currentFlux = currentFlux * bsdf.reflectance();
             }

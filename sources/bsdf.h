@@ -13,7 +13,7 @@
 
 #include "vector3d.h"
 
-class BRDFBase;
+class BSDFBase;
 class BSSRDF;
 
 enum BsdfType {
@@ -21,12 +21,13 @@ enum BsdfType {
     BSDF_TYPE_LAMBERTIAN_BRDF,
     BSDF_TYPE_SPECULAR_BRDF,
     BSDF_TYPE_PHONG_BRDF,
+    BSDF_TYPE_REFRACTION,
     BSDF_TYPE_BSSRDF
 };
 
 class BSDF_DLL BSDF {
 private:
-    const BRDFBase* _ptr;
+    const BSDFBase* _ptr;
     const BSSRDF*   _bssrdf;
     BsdfType        _type;
 
@@ -36,19 +37,20 @@ public:
     ~BSDF();
 
     BSDF& operator=(const BSDF& brdf);
-    Vector3D reflectance() const;
-    void sample(const Vector3D& in, const Vector3D& orientNormal, const double rand1, const double rand2, Vector3D* out) const;
+    const Vector3D& reflectance() const;
+    void sample(const Vector3D& in, const Vector3D& orientNormal, const double rand1, const double rand2, Vector3D* out, double* pdf) const;
     BsdfType type() const;
 
     void setBssrdf(const BSSRDF& bssrdf);
 
 private:
-    BSDF(const BRDFBase* ptr, BsdfType type);
+    BSDF(const BSDFBase* ptr, BsdfType type);
 
     // Friend classes
     friend class LambertianBRDF;
     friend class SpecularBRDF;
     friend class PhongBRDF;
+    friend class RefractionBSDF;
     friend class SubsurfaceIntegrator;
 };
 

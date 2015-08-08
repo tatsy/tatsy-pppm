@@ -82,7 +82,7 @@ Trimesh& Trimesh::operator=(Trimesh&& trimesh) {
 }
 
 bool Trimesh::intersect(const Ray& ray, Hitpoint* hitpoint) const {
-    assert(_accel != NULL && "Accelerator is not constructed");
+    Assertion(_accel != NULL, "Accelerator is not constructed");
     hitpoint->setDistance(INFTY);
     return _accel->intersect(ray, hitpoint);
 }
@@ -148,7 +148,7 @@ void Trimesh::loadPly(const std::string& filename) {
     size_t numFaces = 0;
 
     std::getline(in, format);
-    assert(format == "ply" && "Invalid format identifier");
+    Assertion(format == "ply", "Invalid format identifier");
 
     bool isBody = false;
     while(!in.eof()) {
@@ -160,7 +160,7 @@ void Trimesh::loadPly(const std::string& filename) {
             ss >> key;
             if (key == "format") {
                 ss >> name >> val;
-                assert(name == "binary_little_endian" && "PLY must be binary little endian format!");
+                Assertion(name == "binary_little_endian", "PLY must be binary little endian format!");
             } else if (key == "property") {
                 ss >> name >> val;
             } else if (key == "element") {
@@ -180,7 +180,7 @@ void Trimesh::loadPly(const std::string& filename) {
                 continue;
             }
         } else {
-            assert(numVerts > 0 && numFaces > 0 && "numVerts and numFaces must be positive");
+            Assertion(numVerts > 0 && numFaces > 0, "numVerts and numFaces must be positive");
 
             _vertices.resize(numVerts);
             _faces.resize(numFaces);
@@ -326,17 +326,17 @@ std::vector<Triplet> Trimesh::getIndices() const {
 }
 
 Vector3D Trimesh::getVertex(int id) const {
-    assert(id >= 0 && id < _vertices.size() && "Vertex index out of bounds");
+    Assertion(id >= 0 && id < _vertices.size(), "Vertex index out of bounds");
     return _vertices[id];
 }
 
 Vector3D Trimesh::getNormal(int id) const {
-    assert(id >= 0 && id < _faces.size() && "Triangle index out of bounds");
+    Assertion(id >= 0 && id < _faces.size(), "Triangle index out of bounds");
     return _normals[id];
 }
 
 Triangle Trimesh::getTriangle(int id) const {
-    assert(id >= 0 && id < _faces.size() && "Triangle index out of bounds");
+    Assertion(id >= 0 && id < _faces.size(), "Triangle index out of bounds");
     const Vector3D& p0 = _vertices[_faces[id][0]];
     const Vector3D& p1 = _vertices[_faces[id][1]];
     const Vector3D& p2 = _vertices[_faces[id][2]];

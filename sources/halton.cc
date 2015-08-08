@@ -73,7 +73,7 @@ Halton::Halton(int dim, bool isPermute, unsigned int seed)
     , bases()
     , permute()
 {
-    assert(dim <= nPrimes && "You cannot specify dimension over 1000");
+    Assertion(dim <= nPrimes, "You cannot specify dimension over 1000");
 
     Random rand = Random(seed);
     bases.resize(dims);
@@ -119,7 +119,7 @@ Halton::~Halton()
 }
 
 void Halton::request(RandomSequence& rseq, int n) {
-    assert(n <= dims, "Requested samples are too many!!");
+    Assertion(n <= dims, "Requested samples are too many!!");
     rseq.resize(n);
 
     int* p = &permute[0];

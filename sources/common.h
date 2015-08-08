@@ -2,7 +2,7 @@
 #define _COMMON_H_
 
 #include <cmath>
-#include <cassert>
+#include <iostream>
 
 #include "directories.h"
 #include "vector3d.h"
@@ -17,6 +17,24 @@ static const double invPI = 1.0 / PI;
 static const double IOR_OBJECT = 1.5;
 static const double IOR_VACCUM = 1.0;
 static const double REFLECT_PROBABILITY = 0.5;
+
+// ----------------------------------------------------------------------------
+// Assertion
+// ----------------------------------------------------------------------------
+
+#ifndef NDEBUG
+#define Assertion(PREDICATE, MSG) \
+do { \
+    if (!(PREDICATE)) { \
+        std::cerr << "Asssertion \"" << #PREDICATE << "\" failed in " << __FILE__ \
+        << " line " << __LINE__ << " : " << MSG << std::endl; \
+        abort(); \
+    } \
+} while (false)
+#else  // NDEBUG
+#define Assertion(PREDICATE, MSG) do {} while (false)
+#endif  // NDEBUG
+
 
 // ----------------------------------------------------------------------------
 // Special functions

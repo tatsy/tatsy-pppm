@@ -27,6 +27,7 @@ set(SOURCES vector3d.cc
             photon_diffusion.cc)
 
 set(HEADERS common.h
+            path.h
             renderer.h
             timer.h
             size.h

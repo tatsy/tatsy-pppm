@@ -11,65 +11,93 @@
     #define BRDF_DLL
 #endif
 
+#include "readonly_interface.h"
 #include "bsdf.h"
 #include "common.h"
 #include "vector3d.h"
 
-// Interface class for BRDF object
-class BRDFBase {
+// --------------------------------------------------
+// Interface class for BSDFs
+// --------------------------------------------------
+class BSDFBase : private IReadOnly {
 protected:
-    BRDFBase() {}
-    explicit BRDFBase(const BRDFBase&) {}
+    BSDFBase() {}
+    explicit BSDFBase(const BSDFBase&) {}
 
 public:
-    virtual ~BRDFBase() {}
-    virtual Vector3D reflectance() const = 0;
-    virtual void sample(const Vector3D& in, const Vector3D& orientNormal, const double rand1, const double rand2, Vector3D* out) const = 0;
-    virtual BRDFBase* clone() const = 0;
+    virtual ~BSDFBase() {}
+    virtual const Vector3D& reflectance() const = 0;
+    virtual void sample(const Vector3D& in, const Vector3D& orientNormal, const double rand1, const double rand2, Vector3D* out, double* pdf) const = 0;
+    virtual BSDFBase* clone() const = 0;
 };
 
-class BRDF_DLL LambertianBRDF : public BRDFBase {
+// --------------------------------------------------
+// Lambertian BRDF
+// --------------------------------------------------
+class BRDF_DLL LambertianBRDF : public BSDFBase {
 private:
     Vector3D _reflectance;
 
 public:
     static BSDF factory(const Vector3D& reflectance);
-    Vector3D reflectance() const override;
-    void sample(const Vector3D& in, const Vector3D& orinentNormal, const double rand1, const double rand2, Vector3D* out) const override;
-    BRDFBase* clone() const override;
+    const Vector3D& reflectance() const override;
+    void sample(const Vector3D& in, const Vector3D& orinentNormal, const double rand1, const double rand2, Vector3D* out, double* pdf) const override;
+    BSDFBase* clone() const override;
 
 private:
     explicit LambertianBRDF(const Vector3D& reflectance);
 };
 
-class BRDF_DLL SpecularBRDF : public BRDFBase {
+// --------------------------------------------------
+// Specular BRDF
+// --------------------------------------------------
+class BRDF_DLL SpecularBRDF : public BSDFBase {
 private:
     Vector3D _reflectance;
 
 public:
     static BSDF factory(const Vector3D& reflectance);
-    Vector3D reflectance() const override;
-    void sample(const Vector3D& in, const Vector3D& orientNormal, const double rand1, const double rand2, Vector3D* out) const override;
-    BRDFBase* clone() const override;
+    const Vector3D& reflectance() const override;
+    void sample(const Vector3D& in, const Vector3D& orientNormal, const double rand1, const double rand2, Vector3D* out, double* pdf) const override;
+    BSDFBase* clone() const override;
 
 private:
     explicit SpecularBRDF(const Vector3D& reflectance);
 };
 
-class BRDF_DLL PhongBRDF : public BRDFBase {
+// --------------------------------------------------
+// Phong BRDF
+// --------------------------------------------------
+class BRDF_DLL PhongBRDF : public BSDFBase {
 private:
     Vector3D _reflectance;
     double _coeffN;
 
 public:
     static BSDF factory(const Vector3D& reflectance, const double n);
-    Vector3D reflectance() const override;
-    void sample(const Vector3D& in, const Vector3D& orientNormal, const double rand1, const double rand2, Vector3D* out) const override;
-    BRDFBase* clone() const override;
+    const Vector3D& reflectance() const override;
+    void sample(const Vector3D& in, const Vector3D& orientNormal, const double rand1, const double rand2, Vector3D* out, double* pdf) const override;
+    BSDFBase* clone() const override;
 
 private:
     PhongBRDF(const Vector3D& reflectance, const double n);
 };
 
+// --------------------------------------------------
+// Refraction BSDF
+// --------------------------------------------------
+class BRDF_DLL RefractionBSDF : public BSDFBase {
+private:
+    Vector3D _reflectance;
+
+public:
+    static BSDF factory(const Vector3D& reflectance);
+    const Vector3D& reflectance() const override;
+    void sample(const Vector3D& in, const Vector3D& orientNormal, const double rand1, const double rand2, Vector3D* out, double* pdf) const override;
+    BSDFBase* clone() const override;
+
+private:
+    explicit RefractionBSDF(const Vector3D& reflectance);
+};
 
 #endif  // _SPICA_BRDF_H_

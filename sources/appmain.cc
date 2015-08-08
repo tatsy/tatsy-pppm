@@ -3,12 +3,11 @@
 #include <cstdio>
 #include <string>
 
-static const int    IMAGE_WIDTH  = 1280;
-static const int    IMAGE_HEIGHT = 720;
-static const int    TILES        = 8;
-static const double TILE_SIZE    = 8.0;
+void setScene(Scene* scene, Camera* camera, int imageWidth, int imageHeight) {
+    // Parameters
+    const int tiles = 8;
+    const double tileSize = 8.0;
 
-int main(int argc, char** argv) {
     // Load mesh
     Trimesh trimesh;
     trimesh.load(ASSET_DIRECTORY + "dragon.ply");
@@ -20,9 +19,10 @@ int main(int argc, char** argv) {
     const Vector3D sigmap_s = Vector3D(2.19, 2.62, 3.00);
     const Vector3D sigma_a  = Vector3D(0.0021, 0.0041, 0.0071);
 
-    BSDF meshBsdf = SpecularBRDF::factory(Vector3D(0.50, 0.50, 0.50));
-    BSSRDF meshBssrdf = DipoleBSSRDF::factory(sigma_a, sigmap_s, 1.5);
-    meshBsdf.setBssrdf(meshBssrdf);
+    // BSDF meshBsdf = SpecularBRDF::factory(Vector3D(0.50, 0.50, 0.50));
+    BSDF meshBsdf = RefractionBSDF::factory(Vector3D(0.25, 0.25, 0.75));
+    // BSSRDF meshBssrdf = DipoleBSSRDF::factory(sigma_a, sigmap_s, 1.5);
+    // meshBsdf.setBssrdf(meshBssrdf);
 
     // Load title
     Trimesh titleMesh;
@@ -35,40 +35,49 @@ int main(int argc, char** argv) {
     Envmap envmap(ASSET_DIRECTORY + "subway.hdr");
     
     // Set scene
-    Scene scene;
-    scene.add(trimesh, meshBsdf);
-    scene.add(titleMesh, LambertianBRDF::factory(Vector3D(0.25, 0.75, 0.75)));
-    scene.setEnvmap(envmap);
+    scene->add(trimesh, meshBsdf);
+    scene->add(titleMesh, LambertianBRDF::factory(Vector3D(0.25, 0.75, 0.75)));
+    scene->setEnvmap(envmap);
 
     // Set floor
-    for (int i = 0; i < TILES; i++) {
-        for (int j = 0; j < TILES; j++) {
-            double ii = (i - TILES / 2) * TILE_SIZE;
-            double jj = (j - TILES / 2) * TILE_SIZE;
+    for (int i = 0; i < tiles; i++) {
+        for (int j = 0; j < tiles; j++) {
+            double ii = (i - tiles / 2) * tileSize;
+            double jj = (j - tiles / 2) * tileSize;
             Vector3D p00(ii, -10.0, jj);
-            Vector3D p01(ii + TILE_SIZE, -10.0, jj);
-            Vector3D p10(ii, -10.0, jj + TILE_SIZE);
-            Vector3D p11(ii + TILE_SIZE, -10.0, jj + TILE_SIZE);
+            Vector3D p01(ii + tileSize, -10.0, jj);
+            Vector3D p10(ii, -10.0, jj + tileSize);
+            Vector3D p11(ii + tileSize, -10.0, jj + tileSize);
             Vector3D color = (i + j) % 2 == 0 ? Vector3D(0.9, 0.9, 0.9) : Vector3D(0.2, 0.2, 0.2);
             BSDF     bsdf  = (i + j) % 2 == 0 ? PhongBRDF::factory(color, 128.0) : SpecularBRDF::factory(color); 
-            scene.add(Triangle(p00, p11, p01), bsdf);
-            scene.add(Triangle(p00, p10, p11), bsdf);
+            scene->add(Triangle(p00, p11, p01), bsdf);
+            scene->add(Triangle(p00, p10, p11), bsdf);
         }
     }
 
     // Set accelerator
-    scene.setAccelerator();
+    scene->setAccelerator();
 
     // Set camera
     Vector3D eye(-20.0, 5.0, -20.0);
-    Camera camera(eye, -eye.normalized(), Vector3D(0.0, 1.0, 0.0), 45.0, IMAGE_WIDTH, IMAGE_HEIGHT, 0.5);
+    *camera = Camera(eye, -eye.normalized(), Vector3D(0.0, 1.0, 0.0), 45.0, imageWidth, imageHeight, 1.0);
+}
+
+int main(int argc, char** argv) {
+
+    const int imageWidth  = argc >= 2 ? atoi(argv[1]) : 1280;
+    const int imageHeight = argc >= 3 ? atoi(argv[2]) : 720;
+
+    Scene scene;
+    Camera camera;
+    setScene(&scene, &camera, imageWidth, imageHeight);
 
     // Set render parameters
     RenderParameters params(2000000, 10240, 16.0);
 
     // Set renderer
-    // ProgressivePhotonMapping ppm;
-    // ppm.render(scene, camera, params, true);
-    PathTracing pathtrace;
-    pathtrace.render(scene, camera, params, true);
+    ProgressivePhotonMapping ppm;
+    ppm.render(scene, camera, params, false);
+    // PathTracing pathtrace;
+    // pathtrace.render(scene, camera, params, false);
 }

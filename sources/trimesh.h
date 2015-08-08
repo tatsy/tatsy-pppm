@@ -11,13 +11,13 @@
     #define TRIMESH_DLL 
 #endif
 
-#include <cassert>
 #include <string>
 #include <memory>
 #include <vector>
 #include <array>
 #include <tuple>
 
+#include "common.h"
 #include "geometry_interface.h"
 #include "triangle.h"
 #include "bbox.h"
@@ -60,7 +60,7 @@ public:
     }
 
     int operator[](int i) const {
-        assert(0 <= i && i <= 2 && "access index out of bounds!");
+        Assertion(0 <= i && i <= 2, "access index out of bounds!");
         return _data[i];
     }    
 };

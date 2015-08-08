@@ -58,7 +58,7 @@ void HashGrid<Ty>::clear() {
 
 template <class Ty>
 unsigned int HashGrid<Ty>::hash(const int ix, const int iy, const int iz) const {
-    assert(_hashSize > 0 && "hash size is not initialized");
+    Assertion(_hashSize > 0, "hash size is not initialized");
     return (unsigned int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % _hashSize;
 }
 

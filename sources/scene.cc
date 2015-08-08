@@ -17,12 +17,12 @@ Scene::~Scene()
 }
 
 const Triangle& Scene::getTriangle(int id) const {
-    assert(id >= 0 && id < _triangles.size() && "Triangle index out of bounds");
+    Assertion(id >= 0 && id < _triangles.size(), "Triangle index out of bounds");
     return _triangles[id];
 }
 
 const BSDF& Scene::getBsdf(int id) const {
-    assert(id >= 0 && id < _bsdfIds.size() && "Object index out of boudns");
+    Assertion(id >= 0 && id < _bsdfIds.size(), "Object index out of boudns");
     return _bsdfs[_bsdfIds[id]];
 }
 

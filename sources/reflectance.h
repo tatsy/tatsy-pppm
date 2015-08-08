@@ -4,7 +4,7 @@
 #include "common.h"
 #include "vector3d.h"
 
-inline bool checkTotalReflection(bool into, const Vector3D& pos, const Vector3D& in, const Vector3D& normal, const Vector3D& onormal, Vector3D* reflectdir, Vector3D* refractdir, double* fresnelRe, double* fresnelTr) {
+inline bool checkTotalReflection(bool into, const Vector3D& in, const Vector3D& normal, const Vector3D& onormal, Vector3D* reflectdir, Vector3D* refractdir, double* fresnelRe, double* fresnelTr) {
     *reflectdir = Vector3D::reflect(in, normal);
 
     // Snell's rule

@@ -5,7 +5,6 @@
 
 #include "vector3d.h"
 
-
 class Image {
 private:
     unsigned int _width;
@@ -34,16 +33,23 @@ public:
     // @param[in] inv: if true inverse gamma correction is performed
     void gamma(const double gam, bool inv = false);
 
-    void loadBMP(const std::string& filename);
-    virtual void saveBMP(const std::string& filename) const;
-
-    void loadHDR(const std::string& filename);
-    virtual void saveHDR(const std::string& filename) const;
-
+    // Tone mapping by [Reinhard et al. 2001]
     void tonemap();
 
     inline unsigned int width() const { return _width; }
     inline unsigned int height() const { return _height; }
+
+    void load(const std::string& filename);
+    void save(const std::string& filename);
+
+private:
+    void loadBmp(const std::string& filename);
+    void saveBmp(const std::string& filename) const;
+
+    void loadHdr(const std::string& filename);
+    void saveHdr(const std::string& filename) const;
+
+    void savePng(const std::string& filename) const;
 
 private:
     void release();

@@ -120,7 +120,7 @@ DiffuseBSSRDF::DiffuseBSSRDF(const double eta, const std::vector<double>& distan
     , _distances(distances)
     , _colors(colors)
 {
-    assert(distances.size() == colors.size() && "Arrays for distances and colors must have the same length!!");
+    Assertion(distances.size() == colors.size(), "Arrays for distances and colors must have the same length!!");
 }
 
 DiffuseBSSRDF::DiffuseBSSRDF(const DiffuseBSSRDF& bssrdf)
@@ -211,7 +211,7 @@ void DiffuseBSSRDF::save(const std::string& filename) const {
 
 void DiffuseBSSRDF::load(const std::string& filename) {
     std::ifstream ifs(filename.c_str(), std::ios::in | std::ios::binary);
-    assert(ifs.is_open() && "Faied to open file!!");
+    Assertion(ifs.is_open(), "Faied to open file!!");
 
     int intervals;
     ifs.read((char*)&intervals, sizeof(int));
@@ -285,5 +285,5 @@ Vector3D BSSRDF::operator()(const double dr) const {
 }
 
 void BSSRDF::nullCheck() const {
-    assert(_ptr != NULL && "BSSRDF does not have instance!!");
+    Assertion(_ptr != NULL, "BSSRDF does not have instance!!");
 }

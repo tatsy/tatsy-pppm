@@ -16,8 +16,13 @@
 #include <algorithm>
 
 #include "common.h"
+#include "path.h"
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
 namespace {
+
     PACKED(
     struct BitmapFileHeader {
         unsigned short bfType;
@@ -112,7 +117,7 @@ Image::Image(int width, int height)
 , _height(height)
 , _pixels(0)
 {
-    assert(width >= 0 && height >= 0 && "Image size must be positive");
+    Assertion(width >= 0 && height >= 0, "Image size must be positive");
     _pixels = new Vector3D[_width * _height];
 }
 
@@ -170,12 +175,12 @@ Image& Image::operator=(Image&& image) {
 }
 
 const Vector3D& Image::operator()(int x, int y) const {
-    assert(0 <= x && x < _width && 0 <= y && y < _height && "Pixel index out of bounds");
+    Assertion(0 <= x && x < _width && 0 <= y && y < _height, "Pixel index out of bounds");
     return _pixels[y * _width + x];
 }
 
 Vector3D& Image::pixel(int x, int y) {
-    assert(0 <= x && x < _width && 0 <= y && y < _height && "Pixel index out of bounds");
+    Assertion(0 <= x && x < _width && 0 <= y && y < _height, "Pixel index out of bounds");
     return _pixels[y * _width + x];
 }
 
@@ -207,7 +212,33 @@ void Image::gamma(const double gam, bool inv) {
     }
 }
 
-void Image::loadBMP(const std::string& filename) {
+void Image::load(const std::string& filename) {
+    const std::string ext = path::getExtention(filename);
+    if (ext == ".bmp") {
+        loadBmp(filename);
+    } else if (ext == ".hdr") {
+        loadHdr(filename);    
+    } else {
+        fprintf(stderr, "[ERROR] Unsupported image file format: %s !!", ext.c_str());
+        std::abort();
+    }
+}
+
+void Image::save(const std::string& filename) {
+    const std::string ext = path::getExtention(filename);
+    if (ext == ".bmp") {
+        saveBmp(filename);
+    } else if (ext == ".png") {
+        savePng(filename);    
+    } else if (ext == ".hdr") {
+        saveHdr(filename);
+    } else {
+        fprintf(stderr, "[ERROR] Unsupported image file format: %s !!", ext.c_str());
+        std::abort();    
+    }
+}
+
+void Image::loadBmp(const std::string& filename) {
     release();
 
     BitmapFileHeader header;
@@ -247,58 +278,22 @@ void Image::loadBMP(const std::string& filename) {
     ifs.close();
 }
 
-void Image::saveBMP(const std::string& filename) const {
-    const int lineSize = (sizeof(RGBTriple)* _width + 3) / 4 * 4;
-    const int totalSize = lineSize * _height;
-    const int offBits = sizeof(BitmapFileHeader)+sizeof(BitmapCoreHeader);
-
-    // Prepare file header
-    BitmapFileHeader header;
-    header.bfType = 'B' | ('M' << 8);
-    header.bfSize = offBits + totalSize;
-    header.bfReserved1 = 0;
-    header.bfReserved2 = 0;
-    header.bfOffBits = offBits;
-
-    // Prepare core header
-    BitmapCoreHeader core;
-    core.biSize = 40;
-    core.biWidth = _width;
-    core.biHeight = -_height;
-    core.biPlanes = 1;
-    core.biBitCount = 24;
-    core.biCompression = 0;
-    core.biSizeImage = totalSize;
-    core.biXPixPerMeter = 0;
-    core.biYPixPerMeter = 0;
-    core.biClrUsed = 0;
-    core.biClrImportant = 0;
-
-    std::ofstream ofs(filename.c_str(), std::ios::out | std::ios::binary);
-    ofs.write((char*)&header, sizeof(BitmapFileHeader));
-    ofs.write((char*)&core, sizeof(BitmapCoreHeader));
-
-    char* lineBits = new char[lineSize];
+void Image::saveBmp(const std::string& filename) const {
+    unsigned char* data = new unsigned char[_width * _height * 3];
     for (int y = 0; y < _height; y++) {
-        memset(lineBits, 0, sizeof(char)* lineSize);
-        char* ptr = lineBits;
         for (int x = 0; x < _width; x++) {
             int idx = y * _width + x;
-            RGBTriple triple;
-            triple.rgbRed = toByte(_pixels[idx].x());
-            triple.rgbGreen = toByte(_pixels[idx].y());
-            triple.rgbBlue = toByte(_pixels[idx].z());
-            memcpy((void*)ptr, (void*)&triple, sizeof(RGBTriple));
-            ptr += sizeof(RGBTriple);
+            data[idx * 3 + 0] = toByte(_pixels[idx].x());
+            data[idx * 3 + 1] = toByte(_pixels[idx].y());
+            data[idx * 3 + 2] = toByte(_pixels[idx].z());
         }
-        ofs.write(lineBits, sizeof(char)* lineSize);
     }
-    delete[] lineBits;
 
-    ofs.close();
+    stbi_write_bmp(filename.c_str(), _width, _height, 3, data);
+    delete[] data;
 }
 
-void Image::loadHDR(const std::string& filename) {
+void Image::loadHdr(const std::string& filename) {
     release();
 
     // Open file
@@ -438,7 +433,7 @@ void Image::loadHDR(const std::string& filename) {
     delete[] buffer;
 }
 
-void Image::saveHDR(const std::string& filename) const {
+void Image::saveHdr(const std::string& filename) const {
     std::ofstream ofs(filename.c_str(), std::ios::out | std::ios::binary);
     if (!ofs.is_open()) {
         std::cerr << "Failed to open file \"" << filename << "\"" << std::endl;
@@ -484,6 +479,20 @@ void Image::saveHDR(const std::string& filename) const {
     ofs.write((char*)&pixbuf[0], pixbuf.size());
 
     ofs.close();
+}
+
+void Image::savePng(const std::string& filename) const {
+    unsigned char* data = new unsigned char[_width * _height * 3];
+    for (int y = 0; y < _height; y++) {
+        for (int x = 0; x < _width; x++) {
+            int idx = y * _width + x;
+            data[idx * 3 + 0] = toByte(_pixels[idx].x());
+            data[idx * 3 + 1] = toByte(_pixels[idx].y());
+            data[idx * 3 + 2] = toByte(_pixels[idx].z());
+        }
+    }
+    stbi_write_png(filename.c_str(), _width, _height, 3, data, _width * 3);
+    delete[] data;
 }
 
 void Image::tonemap() {

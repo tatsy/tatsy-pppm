@@ -6,7 +6,7 @@
 PerspectiveCamera::PerspectiveCamera()
     : ICamera()
     , _fov(0.0)
-    , _aspect(0.0)
+    , _aspect(1.0)
     , _halfTangent(0.0)
 {
 }
@@ -22,6 +22,7 @@ PerspectiveCamera::PerspectiveCamera(const Vector3D& center, const Vector3D& dir
 PerspectiveCamera::PerspectiveCamera(const PerspectiveCamera& camera)
     : ICamera(camera)
     , _fov(camera._fov)
+    , _aspect(camera._aspect)
     , _halfTangent(camera._halfTangent)
 {
 }
@@ -33,6 +34,7 @@ PerspectiveCamera::~PerspectiveCamera()
 PerspectiveCamera& PerspectiveCamera::operator=(const PerspectiveCamera& camera) {
     ICamera::operator=(camera);
     this->_fov = camera._fov;
+    this->_aspect = camera._aspect;
     this->_halfTangent = camera._halfTangent;
     return *this;
 }

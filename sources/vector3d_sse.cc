@@ -81,7 +81,7 @@ void Vector3D::setY(double y) { xyz.v[1] = (float)y; }
 void Vector3D::setZ(double z) { xyz.v[2] = (float)z; }
 
 double Vector3D::operator[](int d) const {
-    assert(0 <= d && d <= 2 && "Dimension index should be between 0 and 2!!");
+    Assertion(0 <= d && d <= 2 && "Dimension index should be between 0 and 2!!");
     return xyz.v[d];
 }
 
@@ -120,13 +120,13 @@ Vector3D& Vector3D::operator*=(double s) {
 }
 
 Vector3D& Vector3D::operator/=(const Vector3D& v) {
-    assert(v.x() != 0.0, v.y() != 0.0 && v.z() != 0.0 && "Zero division!!");
+    Assertion(v.x() != 0.0 && v.y() != 0.0 && v.z() != 0.0, "Zero division!!");
     this->xyz.d = _mm_div_ps(xyz.d, v.xyz.d);
     return *this;
 }
 
 Vector3D& Vector3D::operator/=(double s) {
-    assert(s != 0.0 && "Zero division!!");
+    Assertion(s != 0.0, "Zero division!!");
     this->operator*=(1.0 / s);
     return *this;
 }

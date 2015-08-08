@@ -24,7 +24,7 @@ BSDF::BSDF(const BSDF& brdf)
     this->operator=(brdf);
 }
 
-BSDF::BSDF(const BRDFBase* ptr, BsdfType type)
+BSDF::BSDF(const BSDFBase* ptr, BsdfType type)
     : _ptr(ptr)
     , _bssrdf(NULL)
     , _type(type)
@@ -55,12 +55,12 @@ BSDF& BSDF::operator=(const BSDF& bsdf) {
     return *this;
 }
 
-Vector3D BSDF::reflectance() const {
+const Vector3D& BSDF::reflectance() const {
     return _ptr->reflectance();
 }
 
-void BSDF::sample(const Vector3D& in, const Vector3D& normal, const double rand1, const double rand2, Vector3D* out) const {
-    _ptr->sample(in, normal, rand1, rand2, out);
+void BSDF::sample(const Vector3D& in, const Vector3D& normal, const double rand1, const double rand2, Vector3D* out, double* pdf) const {
+    _ptr->sample(in, normal, rand1, rand2, out, pdf);
 }
 
 BsdfType BSDF::type() const {

@@ -17,7 +17,7 @@ Ray::Ray(const Vector3D& origin, const Vector3D& direction)
     , _direction(direction)
     , _invdir()
 {
-    assert(std::abs(1.0 - direction.norm()) < 1.0e-3 && "Direction must be unit vector");
+    Assertion(std::abs(1.0 - direction.norm()) < 1.0e-3, "Direction must be unit vector");
     calcInvdir();
 }
 

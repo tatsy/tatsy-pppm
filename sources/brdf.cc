@@ -5,6 +5,7 @@
 
 #include "bsdf.h"
 #include "sampler.h"
+#include "reflectance.h"
 
 // --------------------------------------------------
 // Lambertian BRDF
@@ -15,15 +16,15 @@ LambertianBRDF::LambertianBRDF(const Vector3D& reflectance)
 {
 }
 
-Vector3D LambertianBRDF::reflectance() const {
+const Vector3D& LambertianBRDF::reflectance() const {
     return _reflectance;
 }
 
-void LambertianBRDF::sample(const Vector3D& in, const Vector3D& normal, const double rand1, const double rand2, Vector3D* out) const {
+void LambertianBRDF::sample(const Vector3D& in, const Vector3D& normal, const double rand1, const double rand2, Vector3D* out, double* pdf) const {
     sampler::onHemisphere(normal, out, rand1, rand2);
 }
 
-BRDFBase* LambertianBRDF::clone() const {
+BSDFBase* LambertianBRDF::clone() const {
     return new LambertianBRDF(_reflectance);
 }
 
@@ -40,15 +41,15 @@ SpecularBRDF::SpecularBRDF(const Vector3D& reflectance)
 {
 }
 
-Vector3D SpecularBRDF::reflectance() const {
+const Vector3D& SpecularBRDF::reflectance() const {
     return _reflectance;
 }
 
-void SpecularBRDF::sample(const Vector3D& in, const Vector3D& normal, const double rand1, const double rand2, Vector3D* out) const {
+void SpecularBRDF::sample(const Vector3D& in, const Vector3D& normal, const double rand1, const double rand2, Vector3D* out, double* pdf) const {
     (*out) = Vector3D::reflect(in, normal);
 }
 
-BRDFBase* SpecularBRDF::clone() const {
+BSDFBase* SpecularBRDF::clone() const {
     return new SpecularBRDF(_reflectance);
 }
 
@@ -66,11 +67,11 @@ PhongBRDF::PhongBRDF(const Vector3D& reflectance, const double n)
 {
 }
 
-Vector3D PhongBRDF::reflectance() const {
+const Vector3D& PhongBRDF::reflectance() const {
     return _reflectance;
 }
 
-void PhongBRDF::sample(const Vector3D& in, const Vector3D& normal, const double rand1, const double rand2, Vector3D* out) const {
+void PhongBRDF::sample(const Vector3D& in, const Vector3D& normal, const double rand1, const double rand2, Vector3D* out, double* pdf) const {
     Vector3D refDir = Vector3D::reflect(in, normal);
 
     Vector3D u, v, w;
@@ -89,10 +90,58 @@ void PhongBRDF::sample(const Vector3D& in, const Vector3D& normal, const double 
     (*out) = u * sin(theta) * cos(phi) + w * cos(theta) + v * sin(theta) * sin(phi);
 }
 
-BRDFBase* PhongBRDF::clone() const {
+BSDFBase* PhongBRDF::clone() const {
     return new PhongBRDF(_reflectance, _coeffN);
 }
 
 BSDF PhongBRDF::factory(const Vector3D& reflectance, const double n) {
     return BSDF(new PhongBRDF(reflectance, n), BSDF_TYPE_PHONG_BRDF);
+}
+
+// --------------------------------------------------
+// Refraction BSDF
+// --------------------------------------------------
+
+RefractionBSDF::RefractionBSDF(const Vector3D& reflectance) 
+    : _reflectance(reflectance)
+{
+}
+
+const Vector3D& RefractionBSDF::reflectance() const {
+    return _reflectance;
+}
+
+void RefractionBSDF::sample(const Vector3D& in, const Vector3D& normal, const double rand1, const double rand2, Vector3D* out, double* pdf) const {
+    bool into = true;
+    Vector3D orientingNormal = normal;
+    if (Vector3D::dot(in, normal) >= 0.0) {
+        into = false;
+        orientingNormal *= -1.0;
+    }
+
+    Vector3D reflectDir, transmitDir;
+    double fresnelRe, fresnelTr;
+    bool totalReflectance = checkTotalReflection(into, in, normal, orientingNormal, &reflectDir, &transmitDir, &fresnelRe, &fresnelTr);
+
+    if (totalReflectance) {
+        *out = reflectDir;
+        *pdf = 1.0;
+    } else {
+        const double reflectProbability = 0.25 + 0.5 * REFLECT_PROBABILITY;
+        if (rand1 < reflectProbability) {
+            *out = reflectDir;
+            *pdf = reflectProbability / fresnelRe;
+        } else {
+            *out = transmitDir;
+            *pdf = (1.0 - reflectProbability) / fresnelTr;
+        }
+    }
+}
+
+BSDFBase* RefractionBSDF::clone() const {
+    return new RefractionBSDF(_reflectance);
+}
+
+BSDF RefractionBSDF::factory(const Vector3D& reflectance) {
+    return BSDF(new RefractionBSDF(reflectance), BSDF_TYPE_REFRACTION);
 }

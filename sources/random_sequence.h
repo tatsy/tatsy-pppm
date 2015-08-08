@@ -1,9 +1,9 @@
 #ifndef _RANDOM_SEQUENCE_H_
 #define _RANDOM_SEQUENCE_H_
 
-#include <cassert>
 #include <vector>
 
+#include "common.h"
 #include "random.h"
 
 class RandomSequence {
@@ -44,7 +44,7 @@ public:
     }
 
     void set(int i, double val) {
-        assert(0 <= i && i < que.size() && "Sample index out of bounds!!");
+        Assertion(0 <= i && i < que.size(), "Sample index out of bounds!!");
         que[i] = val;
     }
 
@@ -57,7 +57,7 @@ public:
     }
 
     double pop() {
-        assert(pos < que.size(), "Sequence is empty!!");
+        Assertion(pos < que.size(), "Sequence is empty!!");
         return que[pos++];
     }
 };

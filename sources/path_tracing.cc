@@ -79,15 +79,15 @@ void PathTracing::render(const Scene& scene, const Camera& camera, const RenderP
         }
 
         char filename[512];
-        sprintf(filename, (RESULT_DIRECTORY + "path_tracing_%03d.bmp").c_str(), t + 1);
+        sprintf(filename, (RESULT_DIRECTORY + "path_tracing_%03d.png").c_str(), t + 1);
         _result.gamma(2.2, true);
-        _result.saveBMP(filename);
+        _result.save(filename);
 
         // Displaing text message
         printf("%.2f sec: %d / %d\n", timer.stop(), t + 1, params.spp());
         if (timer.stop() > 875.0) {
             printf("About 15 mins have passed !!\n");
-            _result.saveBMP("final_result.bmp");
+            _result.save(RESULT_DIRECTORY + "final_result.png");
             // break;
         }
     }
@@ -133,9 +133,10 @@ Vector3D PathTracing::executePathTracing(const Scene& scene, const Camera& camer
         }
 
         // Find new direction from BRDF
+        double pdf = 1.0;
         Vector3D nextdir;
-        bsdf.sample(ray.direction(), orientingNormal, rands[0], rands[1], &nextdir);
-        weight *= bsdf.reflectance();
+        bsdf.sample(ray.direction(), orientingNormal, rands[0], rands[1], &nextdir, &pdf);
+        weight *= bsdf.reflectance() / pdf;
         ray = Ray(hitpoint.position(), nextdir);
 
         // Possibly terminate the path

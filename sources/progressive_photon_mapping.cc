@@ -91,14 +91,14 @@ void ProgressivePhotonMapping::render(const Scene& scene, const Camera& camera, 
         }
 
         char filename[512];
-        sprintf(filename, (RESULT_DIRECTORY + "progressive_photonmap_%03d.bmp").c_str(), t + 1);
+        sprintf(filename, (RESULT_DIRECTORY + "progressive_photonmap_%03d.png").c_str(), t + 1);
         _result.gamma(2.2, true);
-        _result.saveBMP(filename);
+        _result.save(filename);
         printf("%.2f sec: %d / %d\n", timer.stop(), t + 1, params.spp());
 
         if (timer.stop() > 875.0) {
-            printf("Timi limit !!");
-            _result.saveBMP("final_result.bmp");
+            printf("About 15 min elapsed !!\n");
+            _result.save(RESULT_DIRECTORY + "final_result.png");
         }
     }
 }
@@ -115,7 +115,7 @@ void ProgressivePhotonMapping::constructHashGrid(std::vector<RenderPoint>& rpoin
 
     // Heuristic for initial radius
     Vector3D boxsize = bbox.posMax() - bbox.posMin();
-    const double irad = ((boxsize.x() + boxsize.y() + boxsize.z()) / 3.0) / ((imageW + imageH) / 2.0) * 2.0;
+    const double irad = ((boxsize.x() + boxsize.y() + boxsize.z()) / 3.0) / ((imageW + imageH) / 2.0) * 8.0;
 
     // Initialize radi
     Vector3D iradv(irad, irad, irad);
@@ -250,14 +250,16 @@ void ProgressivePhotonMapping::tracePhotons(const Scene& scene, Random& rand, in
                 // Russian roulette determines if trace is continued or terminated
                 const double probability = (bsdf.reflectance().x() + bsdf.reflectance().y() + bsdf.reflectance().z()) / 3.0;
                 if (rseq.pop() < probability) {
-                    bsdf.sample(currentRay.direction(), orientNormal, rseq.pop(), rseq.pop(), &nextDir);
+                    double pdf = 1.0;
+                    bsdf.sample(currentRay.direction(), orientNormal, rseq.pop(), rseq.pop(), &nextDir, &pdf);
                     currentRay = Ray(hitpoint.position(), nextDir);
                     currentFlux = currentFlux * bsdf.reflectance() / probability;
                 } else {
                     break;
                 }
             } else if (bsdf.type() != BSDF_TYPE_BSSRDF) {
-                bsdf.sample(currentRay.direction(), orientNormal, rseq.pop(), rseq.pop(), &nextDir);
+                double pdf = 1.0;
+                bsdf.sample(currentRay.direction(), orientNormal, rseq.pop(), rseq.pop(), &nextDir, &pdf);
                 currentRay = Ray(hitpoint.position(), nextDir);
                 currentFlux = currentFlux * bsdf.reflectance();
             } else {
@@ -265,7 +267,6 @@ void ProgressivePhotonMapping::tracePhotons(const Scene& scene, Random& rand, in
                 Vector3D reflectDir, refractDir;
                 double fresnelRe, fresnelTr;
                 bool isTotRef = checkTotalReflection(into,
-                                                    hitpoint.position(),
                                                     currentRay.direction(),
                                                     hitpoint.normal(),
                                                     orientNormal,
@@ -297,7 +298,7 @@ void ProgressivePhotonMapping::tracePhotons(const Scene& scene, Random& rand, in
 }
 
 void ProgressivePhotonMapping::executePathTracing(const Scene& scene, const Camera& camera, RandomSequence& rseq, RenderPoint* rp, const int bounceLimit) {
-    assert(rp->pixelX >= 0 && rp->pixelY >= 0 && rp->pixelX < camera.imagesize().width() && rp->pixelY < camera.imagesize().height() && "Pixel index out of bounds!!");   
+    Assertion(rp->pixelX >= 0 && rp->pixelY >= 0 && rp->pixelX < camera.imagesize().width() && rp->pixelY < camera.imagesize().height(), "Pixel index out of bounds!!");   
 
     double px = rp->pixelX + rseq.pop() - 0.5;
     double py = rp->pixelY + rseq.pop() - 0.5;
@@ -330,10 +331,11 @@ void ProgressivePhotonMapping::executePathTracing(const Scene& scene, const Came
             rp->emission += throughput;
             break;
         } else if (bsdf.type() != BSDF_TYPE_BSSRDF) {
+            double pdf = 1.0;
             Vector3D nextDir;
-            bsdf.sample(ray.direction(), orientNormal, rseq.pop(), rseq.pop(), &nextDir);
+            bsdf.sample(ray.direction(), orientNormal, rseq.pop(), rseq.pop(), &nextDir, &pdf);
             ray = Ray(hitpoint.position(), nextDir);
-            weight = weight * bsdf.reflectance();
+            weight = weight * bsdf.reflectance() / pdf;
         } else {
             const bool into = Vector3D::dot(hitpoint.normal(), orientNormal);
 
@@ -343,7 +345,6 @@ void ProgressivePhotonMapping::executePathTracing(const Scene& scene, const Came
                                                 hitpoint.position(),
                                                 ray.direction(),
                                                 hitpoint.normal(),
-                                                orientNormal,
                                                 &reflectDir,
                                                 &transmitDir,
                                                 &fresnelRe,
