@@ -57,6 +57,7 @@ set(HEADERS common.h
             envmap.h
             scene.h
             sampler.h
+            reflectance.h
             render_parameters.h
             photon_map.h
             path_tracing.h

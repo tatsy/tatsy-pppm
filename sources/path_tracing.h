@@ -29,8 +29,7 @@ public:
     void render(const Scene& scene, const Camera& camera, const RenderParameters& params, bool enableBSSRDF = false);
 
 private:
-    Vector3D executePathTracing(const Scene& scene, const Camera& camera, double pixelX, double pixelY, RandomSequence& rseq) const;
-    Vector3D radiance(const Scene& scene, const Ray& ray, RandomSequence& rseq, int bounces, int bounceLimit = 64, int bounceMin = 5) const;
+    Vector3D executePathTracing(const Scene& scene, const Camera& camera, double pixelX, double pixelY, RandomSequence& rseq, int maxBounces = 6) const;
 };
 
 #endif  // _PATH_TRACING_H_

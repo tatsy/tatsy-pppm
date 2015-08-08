@@ -5,27 +5,49 @@
 #include <iostream>
 
 #include "common.h"
+#include "timer.h"
 #include "sampler.h"
+#include "reflectance.h"
 
 #include "random.h"
 #include "random_sequence.h"
+
+#include "subsurface_integrator.h"
 
 const double ProgressivePhotonMapping::ALPHA = 0.7;
 
 ProgressivePhotonMapping::ProgressivePhotonMapping()
     : _result()
+    , _integrator(NULL)
 {
 }
 
 ProgressivePhotonMapping::~ProgressivePhotonMapping()
 {
+    delete _integrator;
 }
 
-void ProgressivePhotonMapping::render(const Scene& scene, const Camera& camera, const RenderParameters& params) {
+void ProgressivePhotonMapping::render(const Scene& scene, const Camera& camera, const RenderParameters& params, bool enableBSSRDF) {
     const int width  = camera.imagesize().width();
     const int height = camera.imagesize().height();
     const int numPixels = width * height;
 
+    // Preprocess to account for subsurface scattering
+    double areaRadius = 0.0;
+    if (enableBSSRDF) {
+        // Computing spans of dert throwing
+        double avgArea = 0.0;
+        for (int i = 0; i < scene.numTriangles(); i++) {
+            avgArea += scene.getTriangle(i).area();
+        }
+        avgArea /= scene.numTriangles();
+
+        // Initializing subsurface scattering integrator
+        areaRadius = sqrt(avgArea) * 1.0;
+        _integrator = new SubsurfaceIntegrator();
+    }
+
+    // Initialize render points
     std::vector<RenderPoint> rpoints(numPixels);
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
@@ -39,9 +61,19 @@ void ProgressivePhotonMapping::render(const Scene& scene, const Camera& camera, 
     // Allocate image
     _result.resize(width, height);
 
+    // Start timer
+    Timer timer;
+    timer.start();
+
+    // Rendering
     Random rand = Random((unsigned int)time(NULL));
     for (int t = 0; t < params.spp(); t++) {
         std::cout << "--- Iteration No." << (t + 1) << " ---" << std::endl;
+
+        // 0th pass: compute irradiance for subsurface scattering objects
+        if (enableBSSRDF) {
+            _integrator->initialize(scene, params, areaRadius, 0.05);
+        }
 
         // 1st pass: trace rays from camera
         traceRays(scene, camera, rand, &rpoints);
@@ -49,7 +81,7 @@ void ProgressivePhotonMapping::render(const Scene& scene, const Camera& camera, 
         // 2nd pass: trace photons from lights
         tracePhotons(scene, rand, params.photons());
 
-        // Save temporal image
+        // Save intermediate image
         _result.fill(Vector3D(0.0, 0.0, 0.0));
         for (int i = 0; i < numPixels; i++) {
             const RenderPoint& rp = rpoints[i];
@@ -62,8 +94,13 @@ void ProgressivePhotonMapping::render(const Scene& scene, const Camera& camera, 
         sprintf(filename, (RESULT_DIRECTORY + "progressive_photonmap_%03d.bmp").c_str(), t + 1);
         _result.gamma(2.2, true);
         _result.saveBMP(filename);
-    }
+        printf("%.2f sec: %d / %d\n", timer.stop(), t + 1, params.spp());
 
+        if (timer.stop() > 875.0) {
+            printf("Timi limit !!");
+            _result.saveBMP("final_result.bmp");
+        }
+    }
 }
 
 void ProgressivePhotonMapping::constructHashGrid(std::vector<RenderPoint>& rpoints, int imageW, int imageH) {
@@ -223,6 +260,29 @@ void ProgressivePhotonMapping::tracePhotons(const Scene& scene, Random& rand, in
                 bsdf.sample(currentRay.direction(), orientNormal, rseq.pop(), rseq.pop(), &nextDir);
                 currentRay = Ray(hitpoint.position(), nextDir);
                 currentFlux = currentFlux * bsdf.reflectance();
+            } else {
+                bool into = Vector3D::dot(hitpoint.normal(), orientNormal) > 0.0;
+                Vector3D reflectDir, refractDir;
+                double fresnelRe, fresnelTr;
+                bool isTotRef = checkTotalReflection(into,
+                                                    hitpoint.position(),
+                                                    currentRay.direction(),
+                                                    hitpoint.normal(),
+                                                    orientNormal,
+                                                    &reflectDir,
+                                                    &refractDir,
+                                                    &fresnelRe,
+                                                    &fresnelTr);
+
+                if (isTotRef) {
+                    // Total reflection
+                    currentRay = Ray(hitpoint.position(), reflectDir);
+                    currentFlux = currentFlux * bsdf.reflectance();
+                } else {
+                    // Reflect
+                    currentRay = Ray(hitpoint.position(), reflectDir);
+                    currentFlux = currentFlux * bsdf.reflectance() * fresnelRe;
+                }
             }
         }
 
@@ -246,11 +306,13 @@ void ProgressivePhotonMapping::executePathTracing(const Scene& scene, const Came
 
     Intersection isect;
     Vector3D weight(1.0, 1.0, 1.0);
+    Vector3D throughput(0.0, 0.0, 0.0);
+
     for (int bounce = 0; ; bounce++) {
         if (bounce >= bounceLimit || !scene.intersect(ray, isect)) {
             rp->weight = weight;
             rp->coeff  = coeff;
-            rp->emission += weight * scene.envmap().sampleFromDir(ray.direction());
+            rp->emission += throughput + weight * scene.envmap().sampleFromDir(ray.direction());
             break;
         }
 
@@ -265,12 +327,40 @@ void ProgressivePhotonMapping::executePathTracing(const Scene& scene, const Came
             rp->normal = hitpoint.normal();
             rp->weight = weight;
             rp->coeff  = coeff;
+            rp->emission += throughput;
             break;
         } else if (bsdf.type() != BSDF_TYPE_BSSRDF) {
             Vector3D nextDir;
             bsdf.sample(ray.direction(), orientNormal, rseq.pop(), rseq.pop(), &nextDir);
             ray = Ray(hitpoint.position(), nextDir);
             weight = weight * bsdf.reflectance();
+        } else {
+            const bool into = Vector3D::dot(hitpoint.normal(), orientNormal);
+
+            Vector3D reflectDir, transmitDir;
+            double fresnelRe, fresnelTr;
+            bool isTotRef = checkTotalReflection(into,
+                                                hitpoint.position(),
+                                                ray.direction(),
+                                                hitpoint.normal(),
+                                                orientNormal,
+                                                &reflectDir,
+                                                &transmitDir,
+                                                &fresnelRe,
+                                                &fresnelTr);
+
+            if (isTotRef) {
+                // Total reflection
+                ray = Ray(hitpoint.position(), reflectDir);
+                weight = weight * bsdf.reflectance();
+            } else {
+                // Both reflect and transmit
+                ray = Ray(hitpoint.position(), reflectDir);
+                Vector3D weightTr = weight * bsdf.reflectance() * fresnelTr;
+                Vector3D irad = _integrator->irradiance(hitpoint.position(), bsdf);
+                throughput += irad * weightTr;
+                weight = weight * bsdf.reflectance() * fresnelRe;
+            }
         }
     }
 }

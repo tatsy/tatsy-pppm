@@ -51,7 +51,7 @@ Vector3D Envmap::sampleFromDir(const Vector3D& dir) const {
     const double iblv = theta / PI;
     const double iblu = phi / (2.0 * PI);
 
-    const double iblx = clamp(iblu * _image.width(), 0.0, _image.width() - 1.0);
+    const double iblx = clamp(iblu * _image.width(),  0.0, _image.width()  - 1.0);
     const double ibly = clamp(iblv * _image.height(), 0.0, _image.height() - 1.0);
 
     return _image((int)iblx, (int)ibly);
@@ -74,10 +74,10 @@ Photon Envmap::samplePhoton(RandomSequence& rseq, const int numPhotons) const {
 
     const double phi = u * PI * 2.0;
     
-    const double y   = (1.0 - v) * 2.0 - 1.0;
-    const Vector3D dir = Vector3D(sqrt(1.0 - y * y) * cos(phi), y, sqrt(1.0 - y * y) * sin(phi));
-    const double area = (4.0 * PI * R * R) / (width * height);
-    const double pdf = _pdf[index];
+    const double   y    = (1.0 - v) * 2.0 - 1.0;
+    const Vector3D dir  = Vector3D(sqrt(1.0 - y * y) * cos(phi), y, sqrt(1.0 - y * y) * sin(phi));
+    const double   area = (4.0 * PI * R * R) / (width * height);
+    const double   pdf  = _pdf[index];
     const Vector3D currentFlux = sampleFromDir(dir) * (area * PI / (pdf * numPhotons));
 
     return Photon(R * dir, currentFlux, -dir, -dir);                
@@ -144,7 +144,8 @@ void Envmap::createImportanceMap() {
                 }
             }
 
-            _pdf[iy * width + ix] = Vector3D::dot(accum, Vector3D(0.2126, 0.7152, 0.0722));
+            double l = luminance(accum);
+            _pdf[iy * width + ix] = l * l;
             total += _pdf[iy * width + ix];
         }
     }

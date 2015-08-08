@@ -7,46 +7,6 @@
 #include "halton.h"
 #include "timer.h"
 
-namespace {
-    bool isTotalRef(const bool isIncoming,
-                    const Vector3D& position,
-                    const Vector3D& in,
-                    const Vector3D& normal,
-                    const Vector3D& orientNormal,
-                    Vector3D* reflectDir,
-                    Vector3D* refractDir,
-                    double* fresnelRef,
-                    double* fresnelTransmit) {
-
-        *reflectDir = Vector3D::reflect(in, normal);
-
-        // Snell's rule
-        const double nnt = isIncoming ? IOR_VACCUM / IOR_OBJECT : IOR_OBJECT / IOR_VACCUM;
-        const double ddn = Vector3D::dot(in, orientNormal);
-        const double cos2t = 1.0 - nnt * nnt * (1.0 - ddn * ddn);
-
-        if (cos2t < 0.0) {
-            // Total reflect
-            *refractDir = Vector3D();
-            *fresnelRef = 1.0;
-            *fresnelTransmit = 0.0;
-            return true;
-        }
-
-        *refractDir = (in * nnt - normal * (isIncoming ? 1.0 : -1.0) * (ddn * nnt + sqrt(cos2t))).normalized();
-
-        const double a = IOR_OBJECT - IOR_VACCUM;
-        const double b = IOR_OBJECT + IOR_VACCUM;
-        const double R0 = (a * a) / (b * b);
-
-        const double c = 1.0 - (isIncoming ? -ddn : Vector3D::dot(*refractDir, -orientNormal));
-        *fresnelRef = R0 + (1.0 - R0) * pow(c, 5.0);
-        *fresnelTransmit = 1.0 - (*fresnelRef);
-
-        return false;
-    }
-}
-
 PathTracing::PathTracing()
     : _result()
     , _integrator(NULL)
@@ -62,21 +22,22 @@ void PathTracing::render(const Scene& scene, const Camera& camera, const RenderP
     const int width = camera.imagesize().width();
     const int height = camera.imagesize().height();
 
-    // Process for BSSRDF
+    // Preprocess to account for subsurface scattering
     double areaRadius = 0.0;
     if (enableBSSRDF) {
-        // Compute sample span
+        // Computing spans of dert throwing
         double avgArea = 0.0;
         for (int i = 0; i < scene.numTriangles(); i++) {
             avgArea += scene.getTriangle(i).area();
         }
         avgArea /= scene.numTriangles();
 
-        // Initialize integrator
-        areaRadius = sqrt(avgArea) * 0.5;
+        // Initializing subsurface scattering integrator
+        areaRadius = sqrt(avgArea) * 1.0;
         _integrator = new SubsurfaceIntegrator();
     }
 
+    // Preparing random number generators and image buffers for parallel processing
     Halton* rand   = new Halton[OMP_NUM_CORE];
     Image*  buffer = new Image[OMP_NUM_CORE];
     for (int i = 0; i < OMP_NUM_CORE; i++) {
@@ -89,12 +50,14 @@ void PathTracing::render(const Scene& scene, const Camera& camera, const RenderP
     Timer timer;
     timer.start();
 
+    // Rendering
     _result.resize(width, height);
     for (int t = 0; t < taskPerThread; t++) {
         if (enableBSSRDF) {
             _integrator->initialize(scene, params, areaRadius, 0.05);
         }
 
+        // Tracing rays for each pixel
         ompfor (int threadID = 0; threadID < OMP_NUM_CORE; threadID++) {
             RandomSequence rseq;
             for (int y = 0; y < height; y++) {
@@ -105,6 +68,7 @@ void PathTracing::render(const Scene& scene, const Camera& camera, const RenderP
             }
         }
 
+        // Processing accumulated pixel colors for saving intermediate results
         _result.fill(Vector3D(0.0, 0.0, 0.0));
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
@@ -119,69 +83,69 @@ void PathTracing::render(const Scene& scene, const Camera& camera, const RenderP
         _result.gamma(2.2, true);
         _result.saveBMP(filename);
 
-        printf("%7.2f sec: %6.2f %% processed ...\n", timer.stop(), 100.0 * (t + 1) / taskPerThread);
+        // Displaing text message
+        printf("%.2f sec: %d / %d\n", timer.stop(), t + 1, params.spp());
         if (timer.stop() > 875.0) {
             printf("About 15 mins have passed !!\n");
+            _result.saveBMP("final_result.bmp");
             // break;
         }
     }
     printf("Finish !!\n");
 
+    // Deallocating memories
     delete[] rand;
     delete[] buffer;
 }
 
-Vector3D PathTracing::executePathTracing(const Scene& scene, const Camera& camera, double pixelX, double pixelY, RandomSequence& rseq) const {
+Vector3D PathTracing::executePathTracing(const Scene& scene, const Camera& camera, double pixelX, double pixelY, RandomSequence& rseq, int maxBounces) const {
     const double px = pixelX + rseq.pop() - 0.5;
     const double py = pixelY + rseq.pop() - 0.5;
+    
     Ray ray = camera.getRay(px, py);
-    return radiance(scene, ray, rseq, 0) * camera.sensitivity();
-}
-
-Vector3D PathTracing::radiance(const Scene& scene, const Ray& ray, RandomSequence& rseq, int bounces, int bounceLimit, int bounceMin) const {
-    Intersection isect;
-    if (!scene.intersect(ray, isect)) {
-        return scene.envmap().sampleFromDir(ray.direction());
-    }
-
-    const double rands[3] = { rseq.pop(), rseq.pop(), rseq.pop() };
-
-    const int objectID = isect.objectID();
-    const BSDF& bsdf = scene.getBsdf(objectID);
-    const Hitpoint& hitpoint = isect.hitpoint();
-    const Vector3D orientNormal = Vector3D::dot(ray.direction(), hitpoint.normal()) < 0.0 ? hitpoint.normal() : -hitpoint.normal();
-
-    if (bounces >= bounceLimit) {
-        return bsdf.reflectance();
-    }
-
-    // Russian roulette
-    double roulette = std::max(bsdf.reflectance().x(), std::max(bsdf.reflectance().y(), bsdf.reflectance().z()));
-    if (bounces >= bounceMin) {
-        if (roulette < rands[0]) {
-            return Vector3D(0.0, 0.0, 0.0);
-        }
-    } else {
-        roulette = 1.0;
-    }
-
     Vector3D weight(1.0, 1.0, 1.0);
-    Vector3D nextRadiance(1.0, 1.0, 1.0);
-    if (bsdf.type() == BSDF_TYPE_BSSRDF) {
-        Vector3D nextDir;
-        bsdf.sample(ray.direction(), orientNormal, rands[1], rands[2], &nextDir);
-        Ray reflectRay(hitpoint.position(), nextDir);
-        Vector3D reflectR  = radiance(scene, reflectRay, rseq, bounces + 1, bounceLimit, bounceMin);
-        Vector3D transmitR = _integrator->irradiance(hitpoint.position(), bsdf);
-        weight = bsdf.reflectance() / roulette;
-        nextRadiance = reflectR * (1.0 - REFLECT_PROBABILITY) + transmitR * REFLECT_PROBABILITY;
-    } else {
-        Vector3D nextDir;
-        bsdf.sample(ray.direction(), orientNormal, rands[1], rands[2], &nextDir);
-        Ray nextRay(hitpoint.position(), nextDir);    
-        weight       = bsdf.reflectance() / roulette;
-        nextRadiance = radiance(scene, nextRay, rseq, bounces + 1, bounceLimit, bounceMin);
+    Vector3D throughput(0.0, 0.0, 0.0);
+
+    for (int bounces = 0; bounces < maxBounces; bounces++) {
+        Intersection isect;
+        bool foundIntersection = scene.intersect(ray, isect);
+        
+        // If not found intersection, directly sample environment map
+        if (!foundIntersection) {
+            throughput += weight * scene.envmap().sampleFromDir(ray.direction());
+            break;
+        }
+
+        // Request random numbers for this iteration
+        const double rands[3] = { rseq.pop(), rseq.pop(), rseq.pop() };
+
+        // Compute orienting normal
+        const Hitpoint& hitpoint = isect.hitpoint();
+        const Vector3D orientingNormal = Vector3D::dot(ray.direction(), hitpoint.normal()) ? hitpoint.normal() : -hitpoint.normal();
+
+        // Acount for subsurface scattering
+        const int triangleIndex = isect.objectID();
+        const BSDF& bsdf = scene.getBsdf(triangleIndex);
+        if (bsdf.type() == BSDF_TYPE_BSSRDF) {
+            // Account for the indirect subsurface scattering
+            throughput += weight * _integrator->irradiance(hitpoint.position(), bsdf);
+            // break;
+        }
+
+        // Find new direction from BRDF
+        Vector3D nextdir;
+        bsdf.sample(ray.direction(), orientingNormal, rands[0], rands[1], &nextdir);
+        weight *= bsdf.reflectance();
+        ray = Ray(hitpoint.position(), nextdir);
+
+        // Possibly terminate the path
+        if (bounces > 3) {
+            const double roulette = std::max(weight.x(), std::max(weight.y(), weight.z()));
+            if (rands[2] > roulette) break;
+            weight /= roulette;
+        }
     }
 
-    return weight * nextRadiance;
+    return throughput;
 }
+

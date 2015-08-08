@@ -21,20 +21,23 @@ double BSSRDFBase::Ft(const Vector3D& normal, const Vector3D& in) const {
 
     Vector3D refractDir = (in * nnt + normal * (ddn * nnt + sqrt(cos2t))).normalized();
 
-    const double a = IOR_OBJECT - IOR_VACCUM;
-    const double b = IOR_OBJECT + IOR_VACCUM;
-    const double R0 = (a * a) / (b * b);
+    static const double a = IOR_OBJECT - IOR_VACCUM;
+    static const double b = IOR_OBJECT + IOR_VACCUM;
+    static const double R0 = (a * a) / (b * b);
 
     const double c  = 1.0 - Vector3D::dot(refractDir, -normal);
-    const double Re = R0 + (1.0 - R0) * pow(c, 5.0);
+    const double Re = R0 + (1.0 - R0) * (c * c * c * c * c);
     return 1.0 - Re;
 }
 
 double BSSRDFBase::Fdr() const {
+    const double eta2 = _eta * _eta;
+    const double eta3 = eta2 * _eta;
+
     if (_eta >= 1.0) {
-        return -1.4399 / (_eta * _eta) + 0.7099 / _eta + 0.6681 + 0.0636 * _eta;
+        return (-1.439 + 0.7099 * _eta + 0.6681 * eta2 + 0.0636 * eta3) / eta2;
     } else {
-        return -0.4399 + 0.7099 / _eta - 0.3319 / (_eta * _eta) + 0.0636 / (_eta * _eta * _eta);
+        return (-0.4399 * eta3 + 0.7099 * eta2 - 0.3319 * _eta + 0.0636) / eta3;
     }    
 }
 

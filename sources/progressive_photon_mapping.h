@@ -82,17 +82,19 @@ private:
         }
     };
 
+private:
     HashGrid<RenderPoint*> hashgrid;
     static const double ALPHA;
 
     Image _result;
+    SubsurfaceIntegrator* _integrator;
 
 public:
     ProgressivePhotonMapping();
     ~ProgressivePhotonMapping();
 
 public:
-    void render(const Scene& scene, const Camera& camera, const RenderParameters& params);
+    void render(const Scene& scene, const Camera& camera, const RenderParameters& params, bool enableBSSRDF);
 
     inline const Image& result() const { return _result; }
 
