@@ -11,7 +11,7 @@
 // Constants
 // ----------------------------------------------------------------------------
 static const double INFTY = 1.0e20;
-static const double EPS   = 1.0e-8;
+static const double EPS   = 1.0e-12;
 static const double PI    = 4.0 * atan(1.0);
 static const double invPI = 1.0 / PI;
 static const double IOR_OBJECT = 1.5;

@@ -129,7 +129,7 @@ Vector3D PathTracing::executePathTracing(const Scene& scene, const Camera& camer
         if (bsdf.type() == BSDF_TYPE_BSSRDF) {
             // Account for the indirect subsurface scattering
             throughput += weight * _integrator->irradiance(hitpoint.position(), bsdf);
-            // break;
+            break;
         }
 
         // Find new direction from BRDF

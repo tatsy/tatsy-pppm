@@ -20,9 +20,9 @@ class HALTON_DLL Halton {
 private:
     static const int nPrimes = 1000;
     int  dims;
-    int  usedSamples;
-    std::vector<int> bases;
-    std::vector<int> permute;
+    long long usedSamples;
+    std::vector<long long> bases;
+    std::vector<long long> permute;
 
 public:
     // Constructor
@@ -38,7 +38,7 @@ public:
     void request(RandomSequence& rseq, int n);
 
 private:
-    double radicalInverse(int n, int base, const int* p) const;
+    double radicalInverse(long long n, long long base, const long long* p) const;
 };
 
 #endif  // _HATLON_H_

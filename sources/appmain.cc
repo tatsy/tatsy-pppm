@@ -17,12 +17,11 @@ void setScene(Scene* scene, Camera* camera, int imageWidth, int imageHeight) {
 
     // Marble BSSRDF (from [Jensen et al. 2001])
     const Vector3D sigmap_s = Vector3D(2.19, 2.62, 3.00);
-    const Vector3D sigma_a  = Vector3D(0.0021, 0.0041, 0.0071);
+    const Vector3D sigma_a  = Vector3D(0.0021, 0.0041, 0.0071) * 0.01;
 
-    // BSDF meshBsdf = SpecularBRDF::factory(Vector3D(0.50, 0.50, 0.50));
-    BSDF meshBsdf = RefractionBSDF::factory(Vector3D(0.25, 0.25, 0.75));
-    // BSSRDF meshBssrdf = DipoleBSSRDF::factory(sigma_a, sigmap_s, 1.5);
-    // meshBsdf.setBssrdf(meshBssrdf);
+    BSDF meshBsdf = PhongBRDF::factory(Vector3D(0.5, 0.5, 0.5), 16.0);
+    BSSRDF meshBssrdf = DipoleBSSRDF::factory(sigma_a, sigmap_s, 1.5);
+    meshBsdf.setBssrdf(meshBssrdf);
 
     // Load title
     Trimesh titleMesh;
@@ -36,7 +35,7 @@ void setScene(Scene* scene, Camera* camera, int imageWidth, int imageHeight) {
     
     // Set scene
     scene->add(trimesh, meshBsdf);
-    scene->add(titleMesh, LambertianBRDF::factory(Vector3D(0.25, 0.75, 0.75)));
+    scene->add(titleMesh, LambertianBRDF::factory(Vector3D(0.75, 0.25, 0.25)));
     scene->setEnvmap(envmap);
 
     // Set floor
@@ -77,7 +76,7 @@ int main(int argc, char** argv) {
 
     // Set renderer
     ProgressivePhotonMapping ppm;
-    ppm.render(scene, camera, params, false);
+    ppm.render(scene, camera, params);
     // PathTracing pathtrace;
-    // pathtrace.render(scene, camera, params, false);
+    // pathtrace.render(scene, camera, params, true);
 }

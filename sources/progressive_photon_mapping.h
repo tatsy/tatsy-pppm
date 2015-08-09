@@ -16,7 +16,7 @@
 #include "scene.h"
 #include "perspective_camera.h"
 
-#include "random.h"
+#include "halton.h"
 #include "random_sequence.h"
 
 #include "hash_grid.h"
@@ -94,14 +94,14 @@ public:
     ~ProgressivePhotonMapping();
 
 public:
-    void render(const Scene& scene, const Camera& camera, const RenderParameters& params, bool enableBSSRDF);
+    void render(const Scene& scene, const Camera& camera, const RenderParameters& params);
 
     inline const Image& result() const { return _result; }
 
 private:
     void constructHashGrid(std::vector<RenderPoint>& rpoints, const int imageW, const int imageH);
-    void traceRays(const Scene& scene, const Camera& camera, Random& rand, std::vector<RenderPoint>* rpoints);
-    void tracePhotons(const Scene& scene, Random& rand, int photons, const int bounceLimit = 64);
+    void traceRays(const Scene& scene, const Camera& camera, Halton* hal, std::vector<RenderPoint>* rpoints);
+    void tracePhotons(const Scene& scene, Halton& hal, int photons, const int bounceLimit = 64);
     void executePathTracing(const Scene& scene, const Camera& camera, RandomSequence& rseq, RenderPoint* rp, const int bounceLimit = 64);
 };
 
