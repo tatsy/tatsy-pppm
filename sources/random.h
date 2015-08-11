@@ -1,16 +1,26 @@
-#ifndef _RANDOM_H_
-#define _RANDOM_H_
+#ifdef _MSC_VER
+#pragma once
+#endif
 
+#ifndef _XORSHIFT_H_
+#define _XORSHIFT_H_
+
+#include <cmath>
 #include <climits>
+#include <memory>
 
-class XorShift {
+#include "random_sampler.h"
+#include "random_interface.h"
+#include "random_sequence.h"
+
+class XorShift : public IRandom {
 private:
     unsigned int seed[4];
     const float coeff1;
     const float coeff2;
 
 public:
-    explicit XorShift(const unsigned int init_seed = 0)
+    explicit XorShift(unsigned int init_seed = 0)
         : coeff1(1.0f / UINT_MAX)
         , coeff2(1.0f / 16777216.0f)
     {
@@ -35,8 +45,22 @@ public:
     double nextReal() {
         return (double)next() * coeff1;
     }
+
+    void request(int n, RandomSequence* rseq) override {
+        rseq->resize(n);
+        for (int i = 0; i < n; i++) {
+            rseq->set(i, nextReal());
+        }
+        rseq->reset();
+    }
+
+    static RandomSampler generateSampler(unsigned int init_seed = 0) {
+        RandomSampler rand;
+        rand.rng = std::unique_ptr<IRandom>(new XorShift(init_seed));
+        return std::move(rand);
+    }
 };
 
 typedef XorShift Random;
 
-#endif  // _RANDOM_H_
+#endif  // _XORSHIFT_H_

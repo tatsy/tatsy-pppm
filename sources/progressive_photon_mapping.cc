@@ -173,7 +173,7 @@ void ProgressivePhotonMapping::traceRays(const Scene& scene, const Camera& camer
         const int taskPerThread = (int)pids[threadID].size();
         for (int i = 0; i < taskPerThread; i++) {
             RandomSequence rseq;
-            hals[threadID].request(rseq, 200);
+            hals[threadID].request(200, &rseq);
  
             const int pid = pids[threadID][i];
             executePathTracing(scene, camera, rseq, &rpoints->at(pid));
@@ -201,7 +201,7 @@ void ProgressivePhotonMapping::tracePhotons(const Scene& scene, Halton* hals, in
     for (int i = 0; i < taskPerThread; i++) {
         ompfor (int threadID = 0; threadID < OMP_NUM_CORE; threadID++) {
             RandomSequence rseq;
-            hals[threadID].request(rseq, 200);
+            hals[threadID].request(200, &rseq);
 
             const Photon photon = scene.envmap().samplePhoton(rseq, photons);
             const Vector3D posLight    = static_cast<Vector3D>(photon);

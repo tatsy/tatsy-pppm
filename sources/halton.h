@@ -13,10 +13,11 @@
 
 #include <vector>
 
-#include "random_sequence.h"
+#include "random_interface.h"
 
+class RandomSampler;
 
-class HALTON_DLL Halton {
+class HALTON_DLL Halton : IRandom {
 private:
     static const int nPrimes = 1000;
     int  dims;
@@ -29,13 +30,15 @@ public:
     // @param[in] dim: dimension of halton sequence
     // @param[in] isPermute: whether or not use permuted Halton
     // @param[in] seed: if permuted Halton is used, it is a seed for random for the permutation
-    explicit Halton(int dim = 200, bool isPermute = true, unsigned int seed = -1);
+    explicit Halton(int dim = 200, bool isPermute = true, unsigned int seed = 0);
     Halton(const Halton& hal);
     ~Halton();
 
     Halton& operator=(const Halton& hal);
 
-    void request(RandomSequence& rseq, int n);
+    void request(int n, RandomSequence* rseq);
+
+    static RandomSampler generateSampler(int dim = 200, bool isPermute = true, unsigned int seed = 0);
 
 private:
     double radicalInverse(long long n, int base, const long long* p) const;

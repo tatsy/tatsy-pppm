@@ -18,7 +18,7 @@
 #include "subsurface_integrator.h"
 #include "readonly_interface.h"
 #include "photon_map.h"
-#include "halton.h"
+#include "random_sampler.h"
 
 class PPM_PROBABILISTIC_DLL ProgressivePhotonMappingProb : private IReadOnly {
 private:
@@ -32,11 +32,11 @@ public:
     ProgressivePhotonMappingProb();
     ~ProgressivePhotonMappingProb();
 
-    void render(const Scene& scene, const Camera& camera, const RenderParameters& params);
+    void render(const Scene& scene, const Camera& camera, const RenderParameters& params, RandomSamplerType randomSamplerType = RANDOM_SAMPLER_PSEUDO_RANDOM);
 
 private:
-    void tracePhotons(const Scene& scene, const Camera& camera, const RenderParameters& params, Halton* hals, int bounceLimit = 64);
-    void traceRays(Image* buffer, const Scene& scene, const Camera& camera, const RenderParameters& params, Halton* hals) const;
+    void tracePhotons(const Scene& scene, const Camera& camera, const RenderParameters& params, RandomSampler* hals, int bounceLimit = 64);
+    void traceRays(Image* buffer, const Scene& scene, const Camera& camera, const RenderParameters& params, RandomSampler* hals) const;
     Vector3D executePathTracing(const Scene& scene, const Camera& camera, const RenderParameters& params, int pixelX, int pixelY, RandomSequence& rseq, int bounceLimit = 64) const;
     Vector3D radiance(const Scene& scene, const Ray& ray, const RenderParameters& params, RandomSequence& rseq, int bounces, int bounceLimit = 64) const;
 };

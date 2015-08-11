@@ -20,10 +20,14 @@ ProgressivePhotonMappingProb::~ProgressivePhotonMappingProb()
     delete _integrator;
 }
 
-void ProgressivePhotonMappingProb::render(const Scene& scene, const Camera& camera, const RenderParameters& params) {
+void ProgressivePhotonMappingProb::render(const Scene& scene, const Camera& camera, const RenderParameters& params, RandomSamplerType randomSamplerType) {
     const int width  = camera.imagesize().width();
     const int height = camera.imagesize().height();
     const int numPixels = width * height;
+
+    // Start timer
+    Timer timer;
+    timer.start();
 
     // Preprocess to account for subsurface scattering
     bool enableBssrdf = false;
@@ -49,15 +53,23 @@ void ProgressivePhotonMappingProb::render(const Scene& scene, const Camera& came
     }
     _radius = (bbox.posMax() - bbox.posMin()).norm() * 0.1;
 
-    // Prepare halton samplers
-    Halton* hals = new Halton[OMP_NUM_CORE];
+    // Prepare random samplers
+    RandomSampler* rsamplers = new RandomSampler[OMP_NUM_CORE];
     for (int i = 0; i < OMP_NUM_CORE; i++) {
-        hals[i] = Halton(200, true, i);
-    }
+        switch (randomSamplerType) {
+        case RANDOM_SAMPLER_PSEUDO_RANDOM:
+            rsamplers[i] = Random::generateSampler(i);
+            break;
 
-    // Start timer
-    Timer timer;
-    timer.start();
+        case RANDOM_SAMPLER_QUASI_MONTE_CARLO:
+            rsamplers[i] = Halton::generateSampler(200, true, i);
+            break;
+
+        default:
+            std::cerr << "[ERROR] unknown random sampler type !!" << std::endl;
+            std::abort();
+        }
+    }
 
     // Rendering
     _result.resize(width, height);
@@ -71,10 +83,10 @@ void ProgressivePhotonMappingProb::render(const Scene& scene, const Camera& came
         }
 
         // 1st pass: conventional photon mapping (and account for subsurface scattering)
-        tracePhotons(scene, camera, params, hals);
+        tracePhotons(scene, camera, params, rsamplers);
 
         // 2nd pass: estimate radiance
-        traceRays(&buffer, scene, camera, params, hals);
+        traceRays(&buffer, scene, camera, params, rsamplers);
 
         // Update radius
         _radius = (t + 1.0) / (t + ALPHA) * _radius;
@@ -90,21 +102,22 @@ void ProgressivePhotonMappingProb::render(const Scene& scene, const Camera& came
         _result.gamma(2.2, true);
 
         char filename[1024];
-        sprintf(filename, (RESULT_DIRECTORY + "ppm_ppa_%03d.png").c_str(), t);
+        sprintf(filename, (RESULT_DIRECTORY + "%03d.png").c_str(), t);
         _result.save(filename);
         printf("%.2f sec: %d / %d\n", timer.stop(), t, params.spp());
 
         if (timer.stop() > 875.0) {
             printf("About 15 min elapsed!!\n");
-            _result.save("final_result.png");
+            _result.save(RESULT_DIRECTORY + "final_result.png");
+            break;
         }
     }
 
     // Deallocate memories
-    delete[] hals;
+    delete[] rsamplers;
 }
 
-void ProgressivePhotonMappingProb::tracePhotons(const Scene& scene, const Camera& camera, const RenderParameters& params, Halton* hals, int bounceLimit) {
+void ProgressivePhotonMappingProb::tracePhotons(const Scene& scene, const Camera& camera, const RenderParameters& params, RandomSampler* rsamplers, int bounceLimit) {
     const int numPhotons = params.photons();
 
     std::cout << "Shooting photons ..." << std::endl;
@@ -116,7 +129,7 @@ void ProgressivePhotonMappingProb::tracePhotons(const Scene& scene, const Camera
     for (int i = 0; i < taskPerThread; i++) {
         ompfor (int threadID = 0; threadID < OMP_NUM_CORE; threadID++) {
             RandomSequence rseq;
-            hals[threadID].request(rseq, 200);
+            rsamplers[threadID].request(200, &rseq);
 
             const Photon photon = scene.envmap().samplePhoton(rseq, numPhotons);
             const Vector3D posLight    = static_cast<Vector3D>(photon);
@@ -191,7 +204,7 @@ void ProgressivePhotonMappingProb::tracePhotons(const Scene& scene, const Camera
     _photonMap.construct(photonsAll);
 }
 
-void ProgressivePhotonMappingProb::traceRays(Image* buffer, const Scene& scene, const Camera& camera, const RenderParameters& params, Halton* hals) const {
+void ProgressivePhotonMappingProb::traceRays(Image* buffer, const Scene& scene, const Camera& camera, const RenderParameters& params, RandomSampler* rsamplers) const {
     const int width = camera.imagesize().width();
     const int height = camera.imagesize().height();
 
@@ -207,7 +220,7 @@ void ProgressivePhotonMappingProb::traceRays(Image* buffer, const Scene& scene, 
                 const int y = tasks[threadID][i];
                 for (int x = 0; x < width; x++) {
                     RandomSequence rseq;
-                    hals[threadID].request(rseq, 200);
+                    rsamplers[threadID].request(200, &rseq);
                     buffer->pixel(x, y) += executePathTracing(scene, camera, params, x, y, rseq);
                 }
             }

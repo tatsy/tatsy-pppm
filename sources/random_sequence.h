@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "common.h"
-#include "random.h"
 
 class RandomSequence {
 private:
@@ -33,14 +32,6 @@ public:
         pos = rseq.pos;
         que = rseq.que;
         return *this;
-    }
-
-    void add(Random& rand, int n) {
-        que.resize(n);
-        for (int i = 0; i < n; i++) {
-            que[i] = rand.nextReal();
-        }
-        pos = 0;
     }
 
     void set(int i, double val) {

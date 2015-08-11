@@ -3,8 +3,7 @@
 
 #include <string>
 
-static const std::string ROOT_DIRECTORY  = "@CMAKE_SOURCE_DIR@/" ;
-static const std::string ASSET_DIRECTORY = ROOT_DIRECTORY + "assets/";
-static const std::string RESULT_DIRECTORY = ROOT_DIRECTORY + "results/";
+static const std::string ASSET_DIRECTORY = "@ASSET_DIRECTORY@";
+static const std::string RESULT_DIRECTORY = "@RESULT_DIRECTORY@";
 
 #endif  // _DIRECTORIES_H_

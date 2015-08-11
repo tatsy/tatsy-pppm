@@ -1,9 +1,11 @@
 #define HALTON_EXPORT
 #include "halton.h"
-#include "random.h"
 
 #include <cassert>
 #include <algorithm>
+
+#include "random.h"
+#include "random_sampler.h"
 
 namespace {
 
@@ -59,7 +61,7 @@ namespace {
         7793, 7817, 7823, 7829, 7841, 7853, 7867, 7873, 7877, 7879, 7883, 7901, 7907, 7919
     };
 
-    void shuffle(long long* p, int d, Random& rand) {
+    void shuffle(long long* p, int d, XorShift& rand) {
         for (int i = 0; i < d; i++) {
             const int r = rand.nextInt(d - i);
             std::swap(p[i], p[i + r]);
@@ -75,7 +77,7 @@ Halton::Halton(int dim, bool isPermute, unsigned int seed)
 {
     Assertion(dim <= nPrimes, "You cannot specify dimension over 1000");
 
-    Random rand = Random(seed);
+     XorShift rand = XorShift(seed);
     bases.resize(dims);
     int sumBases = 0;
     for (int i = 0; i < dims; i++) {
@@ -118,17 +120,23 @@ Halton::~Halton()
 {
 }
 
-void Halton::request(RandomSequence& rseq, int n) {
+void Halton::request(int n, RandomSequence* rseq) {
     Assertion(n <= dims, "Requested samples are too many!!");
-    rseq.resize(n);
+    rseq->resize(n);
 
     long long* p = &permute[0];
     for (int i = 0; i < n; i++) {
-        rseq.set(i, radicalInverse(usedSamples, bases[i], p));
+        rseq->set(i, radicalInverse(usedSamples, bases[i], p));
         p += bases[i];
     }
     usedSamples++;
-    rseq.reset();
+    rseq->reset();
+}
+
+RandomSampler Halton::generateSampler(int dim, bool isPermte, unsigned int seed) {
+    RandomSampler samp;
+    samp.rng = std::unique_ptr<IRandom>(new Halton(dim, isPermte, seed));
+    return std::move(samp);
 }
 
 double Halton::radicalInverse(long long n, int base, const long long* p) const {

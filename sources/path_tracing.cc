@@ -62,7 +62,7 @@ void PathTracing::render(const Scene& scene, const Camera& camera, const RenderP
             RandomSequence rseq;
             for (int y = 0; y < height; y++) {
                 for (int x = 0; x < width; x++) {
-                    rand[threadID].request(rseq, 200);
+                    rand[threadID].request(200, &rseq);
                     buffer[threadID].pixel(x, height - y - 1) += executePathTracing(scene, camera, x, y, rseq);
                 }
             }

@@ -1,2 +1,10 @@
 build/*
 results/*
+
+*.png
+*.bmp
+*.jpg
+
+*.exe
+*.pdb
+*.dll

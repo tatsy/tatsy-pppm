@@ -216,16 +216,6 @@ void SubsurfaceIntegrator::buildOctree(const std::vector<Vector3D>& points, cons
         irads[i] = irad;
     }
 
-    // Save radiance data for visual checking
-    std::ofstream ofs("sss_sppm_irads.obj", std::ios::out);
-    for (int i = 0; i < numPoints; i++) {
-        Vector3D p = points[i];
-        Vector3D clr = Vector3D::minimum(irads[i], Vector3D(1.0, 1.0, 1.0));
-        ofs << "v " <<  p.x() << " " << p.y() << " " << p.z();
-        ofs << " " << clr.x() << " " << clr.y() << " " << clr.z() << std::endl;
-    }
-    ofs.close();
-
     // Octree construction
     std::vector<IrradiancePoint> iradPoints(numPoints);
     for (int i = 0; i < numPoints; i++) {
@@ -254,7 +244,7 @@ void SubsurfaceIntegrator::buildPhotonMap(const Scene& scene, const int numPhoto
     ompfor (int pid = 0; pid < numPhotons; pid++) {
         RandomSequence rseq;
         omplock {
-            rseq.add(rand, 200);
+            rand.request(200, &rseq);
         }
 
         Photon photon = scene.envmap().samplePhoton(rseq, numPhotons);
