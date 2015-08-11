@@ -109,7 +109,9 @@ void ProgressivePhotonMappingProb::render(const Scene& scene, const Camera& came
         if (timer.stop() > 875.0) {
             printf("About 15 min elapsed!!\n");
             _result.save(RESULT_DIRECTORY + "final_result.png");
+#ifdef __ONSITE__
             break;
+#endif
         }
     }
 

@@ -4,6 +4,7 @@ project(spica_for_rt3)
 # For onsite
 option(ONSITE_BUILD "ONSITE_BUILD" OFF)
 if (${ONSITE_BUILD} STREQUAL "ON")
+  add_definitions(-D__ONSITE__)
   message(STATUS "[INFO] build for onsite!!")
 endif()
 
