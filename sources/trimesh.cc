@@ -84,7 +84,7 @@ Trimesh& Trimesh::operator=(Trimesh&& trimesh) {
 bool Trimesh::intersect(const Ray& ray, Hitpoint* hitpoint) const {
     Assertion(_accel != NULL, "Accelerator is not constructed");
     hitpoint->setDistance(INFTY);
-    return _accel->intersect(ray, hitpoint);
+    return _accel->intersect(ray, hitpoint) != -1;
 }
 
 double Trimesh::area() const {

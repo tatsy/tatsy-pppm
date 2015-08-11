@@ -2,7 +2,7 @@
 configure_file(directories.h.in ${CMAKE_CURRENT_LIST_DIR}/directories.h @ONLY)
 
 set(SOURCES vector3d.cc
-            vector3d_sse.cc
+            vector3d_avx.cc
             halton.cc
             ray.cc
             plane.cc
@@ -23,6 +23,7 @@ set(SOURCES vector3d.cc
             photon_map.cc
             path_tracing.cc
             progressive_photon_mapping.cc
+            ppm_probabilistic.cc
             subsurface_integrator.cc
             photon_diffusion.cc)
 
@@ -63,14 +64,21 @@ set(HEADERS common.h
             photon_map.h
             path_tracing.h
             progressive_photon_mapping.h
+            ppm_probabilistic.h
             subsurface_integrator.h
             photon_diffusion.h)
 
 add_library(photon_diffusion SHARED ${SOURCES} ${HEADERS})
-# set_property(TARGET photon_diffusion APPEND PROPERTY LINK_FLAGS /DEBUG)
 
 add_executable(appmain appmain.cc)
-# set_property(TARGET appmain APPEND PROPERTY LINK_FLAGS /DEBUG)
 
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 target_link_libraries(appmain ${LIB_PREFIX}photon_diffusion${LIB_SUFFIX})
+
+if (MSVC)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zi")
+  set_property(TARGET appmain APPEND PROPERTY LINK_FLAGS "/DEBUG /PROFILE")
+  set_property(TARGET photon_diffusion APPEND PROPERTY LINK_FLAGS "/DEBUG /PROFILE")
+  configure_file(project.vcxproj.user.in "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/appmain.vcxproj.user" @ONLY)
+  configure_file(project.vcxproj.user.in "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/photon_diffusion.vcxproj.user" @ONLY)
+endif()

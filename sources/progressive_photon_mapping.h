@@ -100,8 +100,8 @@ public:
 
 private:
     void constructHashGrid(std::vector<RenderPoint>& rpoints, const int imageW, const int imageH);
-    void traceRays(const Scene& scene, const Camera& camera, Halton* hal, std::vector<RenderPoint>* rpoints);
-    void tracePhotons(const Scene& scene, Halton& hal, int photons, const int bounceLimit = 64);
+    void traceRays(const Scene& scene, const Camera& camera, Halton* hals, std::vector<RenderPoint>* rpoints);
+    void tracePhotons(const Scene& scene, Halton* hals, int photons, const int bounceLimit = 64);
     void executePathTracing(const Scene& scene, const Camera& camera, RandomSequence& rseq, RenderPoint* rp, const int bounceLimit = 64);
 };
 

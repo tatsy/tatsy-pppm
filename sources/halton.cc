@@ -100,17 +100,17 @@ Halton::Halton(int dim, bool isPermute, unsigned int seed)
 Halton::Halton(const Halton& hal)
     : dims()
     , usedSamples()
-    , bases(NULL)
-    , permute(NULL)
+    , bases()
+    , permute()
 {
     this->operator=(hal);
 }
 
 Halton& Halton::operator=(const Halton& hal) {
-    this->dims = hal.dims;
+    this->dims        = hal.dims;
     this->usedSamples = hal.usedSamples;
-    this->bases = hal.bases;
-    this->permute = hal.permute;
+    this->bases       = hal.bases;
+    this->permute     = hal.permute;
     return *this;
 }
 
@@ -131,12 +131,12 @@ void Halton::request(RandomSequence& rseq, int n) {
     rseq.reset();
 }
 
-double Halton::radicalInverse(long long n, long long base, const long long* p) const {
-    double val = 0.0;
-    double invBase = 1.0 / base;
+double Halton::radicalInverse(long long n, int base, const long long* p) const {
+    const double invBase = 1.0 / base;
+    double val   = 0.0;
     double invBi = invBase;
     while (n > 0) {
-        long long d_i = p[n % base];
+        const long long d_i = p[n % base];
         val += d_i * invBi;
         invBi *= invBase;
         n /= base;

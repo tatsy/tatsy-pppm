@@ -47,8 +47,10 @@ void ProgressivePhotonMapping::render(const Scene& scene, const Camera& camera, 
     avgArea /= scene.numTriangles();
 
     // Initializing subsurface scattering integrator
-    areaRadius = sqrt(avgArea) * 1.0;
-    _integrator = new SubsurfaceIntegrator();
+    if (enableBSSRDF) {
+        areaRadius = sqrt(avgArea) * 1.0;
+        _integrator = new SubsurfaceIntegrator();
+    }
 
     // Initialize render points
     std::vector<RenderPoint> rpoints(numPixels);
@@ -65,10 +67,9 @@ void ProgressivePhotonMapping::render(const Scene& scene, const Camera& camera, 
     _result.resize(width, height);
 
     // Prepare halton sampler
-    Halton halForPhotons = Halton(200, true, 31415);
     Halton* hals = new Halton[OMP_NUM_CORE];
     for (int i = 0; i < OMP_NUM_CORE; i++) {
-        hals[i] = Halton(200, true, i + 5);
+        hals[i] = Halton(200, true, i);
     }
 
     // Start timer
@@ -88,7 +89,7 @@ void ProgressivePhotonMapping::render(const Scene& scene, const Camera& camera, 
         traceRays(scene, camera, hals, &rpoints);
 
         // 2nd pass: trace photons from lights
-        tracePhotons(scene, halForPhotons, params.photons());
+        tracePhotons(scene, hals, params.photons());
 
         // Save intermediate image
         for (int i = 0; i < numPixels; i++) {
@@ -126,7 +127,7 @@ void ProgressivePhotonMapping::constructHashGrid(std::vector<RenderPoint>& rpoin
     Vector3D boxsize = bbox.posMax() - bbox.posMin();
     const double irad = ((boxsize.x() + boxsize.y() + boxsize.z()) / 3.0) / ((imageW + imageH) / 2.0) * 8.0;
 
-    // Initialize radi
+    // Initialize radii
     Vector3D iradv(irad, irad, irad);
     for (int i = 0; i < numPixels; i++) {
         if (rpoints[i].n == 0) {
@@ -192,95 +193,94 @@ void ProgressivePhotonMapping::traceRays(const Scene& scene, const Camera& camer
     std::cout << "Hash grid constructed !!" << std::endl << std::endl;
 }
 
-void ProgressivePhotonMapping::tracePhotons(const Scene& scene, Halton& hal, int photons, const int bounceLimit) {
+void ProgressivePhotonMapping::tracePhotons(const Scene& scene, Halton* hals, int photons, const int bounceLimit) {
     std::cout << "Shooting photons ..." << std::endl;
     int proc = 0;
 
-    ompfor (int pid = 0; pid < photons; pid++) {
-        RandomSequence rseq;
-        omplock {
-            hal.request(rseq, 200);
-        }
+    const int taskPerThread = (photons + OMP_NUM_CORE - 1) / OMP_NUM_CORE;
+    for (int i = 0; i < taskPerThread; i++) {
+        ompfor (int threadID = 0; threadID < OMP_NUM_CORE; threadID++) {
+            RandomSequence rseq;
+            hals[threadID].request(rseq, 200);
 
-        const Photon photon = scene.envmap().samplePhoton(rseq, photons);
-        const Vector3D posLight    = static_cast<Vector3D>(photon);
-        const Vector3D normalLight = photon.normal();
+            const Photon photon = scene.envmap().samplePhoton(rseq, photons);
+            const Vector3D posLight    = static_cast<Vector3D>(photon);
+            const Vector3D normalLight = photon.normal();
 
-        Vector3D currentFlux = photon.flux();
+            Vector3D currentFlux = photon.flux();
 
-        Vector3D nextDir; 
-        sampler::onHemisphere(normalLight, &nextDir, rseq.pop(), rseq.pop());
+            Vector3D nextDir; 
+            sampler::onHemisphere(normalLight, &nextDir, rseq.pop(), rseq.pop());
 
-        Ray currentRay(posLight, nextDir);
-        Vector3D prevNormal = normalLight;
+            Ray currentRay(posLight, nextDir);
+            Vector3D prevNormal = normalLight;
 
-        // Shooting photons
-        for (int bounce = 0; ; bounce++) {
-            // Remove photons with zero flux
-            if (bounce >= bounceLimit || std::max(currentFlux.x(), std::max(currentFlux.y(), currentFlux.z())) <= 0.0) {
-                break;
-            }
-
-            // Intersection test
-            Intersection isect;
-            bool isHit = scene.intersect(currentRay, isect);
-            if (!isHit) {
-                break;
-            }
-
-            // Request random numbers
-            const double rands[3] = { rseq.pop(), rseq.pop(), rseq.pop() };
-
-            // Next bounce
-            const int objectID = isect.objectID();
-            const BSDF& bsdf = scene.getBsdf(objectID);
-            const Hitpoint& hitpoint = isect.hitpoint();
-            const Vector3D orientNormal = Vector3D::dot(hitpoint.normal(), currentRay.direction()) < 0.0 ? hitpoint.normal() : -hitpoint.normal();
-
-            if (bsdf.type() == BSDF_TYPE_LAMBERTIAN_BRDF) {
-                // Gather render points
-                std::vector<RenderPoint*> results;
-                omplock {
-                    results = hashgrid[hitpoint.position()];
-                }
-
-                // Update render points
-                for (int i = 0; i < results.size(); i++) {
-                    RenderPoint* rpp = results[i];
-                    const Vector3D v = (*rpp) - hitpoint.position();
-                    if (Vector3D::dot(rpp->normal, hitpoint.normal()) > EPS && (v.squaredNorm() <= rpp->r2)) {
-                        double g = (rpp->n * ALPHA + ALPHA) / (rpp->n * ALPHA + 1.0);
-                        omplock {
-                            rpp->r2 *= g;
-                            rpp->n  += 1;
-                            rpp->flux = (rpp->flux + rpp->weight * currentFlux * invPI) * g;
-                        }
-                    }
-                }
-
-                // Russian roulette determines if trace is continued or terminated
-                const double probability = (bsdf.reflectance().x() + bsdf.reflectance().y() + bsdf.reflectance().z()) / 3.0;
-                if (rands[0] < probability) {
-                    double pdf = 1.0;
-                    bsdf.sample(currentRay.direction(), orientNormal, rands[1], rands[2], &nextDir, &pdf);
-                    currentRay = Ray(hitpoint.position(), nextDir);
-                    currentFlux = currentFlux * bsdf.reflectance() / probability;
-                } else {
+            // Shooting photons
+            for (int bounce = 0; ; bounce++) {
+                // Remove photons with zero flux
+                if (bounce >= bounceLimit || std::max(currentFlux.x(), std::max(currentFlux.y(), currentFlux.z())) <= 0.0) {
                     break;
                 }
-            } else {
-                double pdf = 1.0;
-                bsdf.sample(currentRay.direction(), orientNormal, rands[0], rands[1], &nextDir, &pdf);
-                currentRay = Ray(hitpoint.position(), nextDir);
-                currentFlux = currentFlux * bsdf.reflectance();
+
+                // Intersection test
+                Intersection isect;
+                bool isHit = scene.intersect(currentRay, isect);
+                if (!isHit) {
+                    break;
+                }
+
+                // Request random numbers
+                const double rands[3] = { rseq.pop(), rseq.pop(), rseq.pop() };
+
+                // Next bounce
+                const int objectID = isect.objectID();
+                const BSDF& bsdf = scene.getBsdf(objectID);
+                const Hitpoint& hitpoint = isect.hitpoint();
+                const Vector3D orientNormal = Vector3D::dot(hitpoint.normal(), currentRay.direction()) < 0.0 ? hitpoint.normal() : -hitpoint.normal();
+
+                if (bsdf.type() == BSDF_TYPE_LAMBERTIAN_BRDF) {
+                    // Gather render points
+                    std::vector<RenderPoint*> results;
+                    omplock {
+                        results = hashgrid[hitpoint.position()];
+                    }
+
+                    // Update render points
+                    for (int i = 0; i < results.size(); i++) {
+                        RenderPoint* rpp = results[i];
+                        const Vector3D v = (*rpp) - hitpoint.position();
+                        if (Vector3D::dot(rpp->normal, hitpoint.normal()) > EPS && (v.squaredNorm() <= rpp->r2)) {
+                            double g = (rpp->n * ALPHA + ALPHA) / (rpp->n * ALPHA + 1.0);
+                            omplock {
+                                rpp->r2 *= g;
+                                rpp->n  += 1;
+                                rpp->flux = (rpp->flux + rpp->weight * currentFlux * invPI) * g;
+                            }
+                        }
+                    }
+
+                    // Russian roulette determines if trace is continued or terminated
+                    const double probability = (bsdf.reflectance().x() + bsdf.reflectance().y() + bsdf.reflectance().z()) / 3.0;
+                    if (rands[0] < probability) {
+                        double pdf = 1.0;
+                        bsdf.sample(currentRay.direction(), orientNormal, rands[1], rands[2], &nextDir, &pdf);
+                        currentRay = Ray(hitpoint.position(), nextDir);
+                        currentFlux = currentFlux * bsdf.reflectance() / probability;
+                    } else {
+                        break;
+                    }
+                } else {
+                    double pdf = 1.0;
+                    bsdf.sample(currentRay.direction(), orientNormal, rands[0], rands[1], &nextDir, &pdf);
+                    currentRay = Ray(hitpoint.position(), nextDir);
+                    currentFlux = currentFlux * bsdf.reflectance();
+                }
             }
         }
 
-        omplock {
-            proc += 1;
-            if (proc % 100 == 0) {
-                printf("%6.2f %% processed ...\r", 100.0 * proc / photons);
-            }
+        proc += OMP_NUM_CORE;
+        if (proc % 100 == 0) {
+            printf("%6.2f %% processed ...\r", 100.0 * proc / photons);
         }
     }
     printf("\nFinish !!\n\n");
@@ -308,7 +308,7 @@ void ProgressivePhotonMapping::executePathTracing(const Scene& scene, const Came
         }
 
         // Request random numbers
-        const double rands[3] = { rseq.pop(), rseq.pop(), rseq.pop() };
+        const double rands[2] = { rseq.pop(), rseq.pop() };
 
         // Next bounce
         const int objectID = isect.objectID();

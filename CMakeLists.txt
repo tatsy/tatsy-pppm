@@ -31,13 +31,13 @@ else()
 endif()
 
 # Options for SSE
-option(ENABLE_SSE2 "ENABLE_SSE2" OFF)
-if (${ENABLE_SSE2} STREQUAL "ON")
-  add_definitions(-DENABLE_SSE2)
+option(ENABLE_AVX "ENABLE_AVX" OFF)
+if (${ENABLE_AVX} STREQUAL "ON")
+  add_definitions(-DENABLE_AVX)
   if (MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:SSE2")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:AVX")
   else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsse2")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx")
   endif()
 endif()
 

@@ -5,7 +5,6 @@
 #include <iostream>
 
 #include "directories.h"
-#include "vector3d.h"
 
 // ----------------------------------------------------------------------------
 // Constants
@@ -46,10 +45,6 @@ inline T clamp(T v, T lo, T hi) {
     if (v < lo) v = lo;
     if (v > hi) v = hi;
     return v;
-}
-
-inline double luminance(const Vector3D& v) {
-    return Vector3D::dot(v, Vector3D(0.2126, 0.7152, 0.0722));
 }
 
 // ----------------------------------------------------------------------------

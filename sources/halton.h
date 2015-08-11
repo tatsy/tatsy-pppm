@@ -21,7 +21,7 @@ private:
     static const int nPrimes = 1000;
     int  dims;
     long long usedSamples;
-    std::vector<long long> bases;
+    std::vector<int> bases;
     std::vector<long long> permute;
 
 public:
@@ -38,7 +38,7 @@ public:
     void request(RandomSequence& rseq, int n);
 
 private:
-    double radicalInverse(long long n, long long base, const long long* p) const;
+    double radicalInverse(long long n, int base, const long long* p) const;
 };
 
 #endif  // _HATLON_H_

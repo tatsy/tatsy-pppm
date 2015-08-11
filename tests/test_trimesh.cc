@@ -34,11 +34,11 @@ TEST(TrimeshTest, InvalidLoad) {
 
 TEST(TrimeshTest, LoadTest) {
     Trimesh plymesh;
-    EXPECT_NO_FATAL_FAILURE(plymesh.load(ASSET_DIRECTORY + "gargoil.ply"));
+    EXPECT_NO_FATAL_FAILURE(plymesh.load(ASSET_DIRECTORY + "dragon.ply"));
 }
 
 TEST(TrimeshTest, CopyAndMove) {
-    Trimesh trimesh(ASSET_DIRECTORY + "gargoil.ply");
+    Trimesh trimesh(ASSET_DIRECTORY + "dragon.ply");
     Trimesh trimesh2(trimesh);
 
     EXPECT_EQ(trimesh.numFaces(), trimesh2.numFaces());

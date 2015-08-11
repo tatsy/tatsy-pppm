@@ -21,7 +21,8 @@ const Vector3D& LambertianBRDF::reflectance() const {
 }
 
 void LambertianBRDF::sample(const Vector3D& in, const Vector3D& normal, const double rand1, const double rand2, Vector3D* out, double* pdf) const {
-    sampler::onHemisphere(normal, out, rand1, rand2);
+    const Vector3D orientingNormal = Vector3D::dot(in, normal) < 0.0 ? normal : -normal;
+    sampler::onHemisphere(orientingNormal, out, rand1, rand2);
 }
 
 BSDFBase* LambertianBRDF::clone() const {
@@ -46,7 +47,8 @@ const Vector3D& SpecularBRDF::reflectance() const {
 }
 
 void SpecularBRDF::sample(const Vector3D& in, const Vector3D& normal, const double rand1, const double rand2, Vector3D* out, double* pdf) const {
-    (*out) = Vector3D::reflect(in, normal);
+    const Vector3D orientingNormal = Vector3D::dot(in, normal) < 0.0 ? normal : -normal;
+    (*out) = Vector3D::reflect(in, orientingNormal);
 }
 
 BSDFBase* SpecularBRDF::clone() const {
@@ -72,7 +74,8 @@ const Vector3D& PhongBRDF::reflectance() const {
 }
 
 void PhongBRDF::sample(const Vector3D& in, const Vector3D& normal, const double rand1, const double rand2, Vector3D* out, double* pdf) const {
-    Vector3D refDir = Vector3D::reflect(in, normal);
+    const Vector3D orientingNormal = Vector3D::dot(in, normal) < 0.0 ? normal : -normal;
+    const Vector3D refDir = Vector3D::reflect(in, orientingNormal);
 
     Vector3D u, v, w;
     w = refDir;

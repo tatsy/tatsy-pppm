@@ -16,5 +16,6 @@
 
 #include "path_tracing.h"
 #include "progressive_photon_mapping.h"
+#include "ppm_probabilistic.h"
 
 #endif  // _RENDERER_H_

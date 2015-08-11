@@ -69,5 +69,5 @@ BsdfType BSDF::type() const {
 
 void BSDF::setBssrdf(const BSSRDF& bssrdf) {
     this->_bssrdf = new BSSRDF(bssrdf);
-    this->_type = BSDF_TYPE_BSSRDF;
+    this->_type = this->_type | BSDF_TYPE_BSSRDF;
 }

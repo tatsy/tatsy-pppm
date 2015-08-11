@@ -122,6 +122,8 @@ public:
 
     Vector3D irradiance(const Vector3D& p, const BSDF& bsdf) const;
 
+    inline const PhotonMap& getPhotonMap() const { return photonMap; }
+
 private:
     void buildPhotonMap(const Scene& scene, const int numPhotons, const int bounceLimit);
 

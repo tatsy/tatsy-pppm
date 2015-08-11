@@ -11,19 +11,30 @@
     #define VECTOR_3D_DLL
 #endif
 
+#include "common.h"
 #include <string>
-#include <xmmintrin.h>
+#include <immintrin.h>
 
 class VECTOR_3D_DLL Vector3D {
 private:
 
-#if defined(ENABLE_SSE2) && (defined(_M_AMD64) || defined(_M_X64))
-    union m128 {
-        __m128 d;
-        align_attrib(float,16) v[4];
+#if defined(ENABLE_AVX) && (defined(_M_AMD64) || defined(_M_X64))
+    union m256 {
+        __m256d d;
+        align_attrib(double,32) v[4];
+
+        m256()
+            : d(_mm256_setzero_pd())
+        {
+        }
+
+        m256(double x, double y, double z, double w)
+            : d(_mm256_setr_pd(x, y, z, w))
+        {
+        }
     };
 
-    m128 xyz;
+    m256 xyz;
 #else
     double _x, _y, _z;
 #endif
@@ -79,5 +90,9 @@ VECTOR_3D_DLL Vector3D operator*(const Vector3D& v, double s);
 VECTOR_3D_DLL Vector3D operator*(double s, const Vector3D& v);
 VECTOR_3D_DLL Vector3D operator/(const Vector3D& u, const Vector3D& v);
 VECTOR_3D_DLL Vector3D operator/(const Vector3D& v, double s);
+
+inline double luminance(const Vector3D& v) {
+    return Vector3D::dot(v, Vector3D(0.2126, 0.7152, 0.0722));
+}
 
 #endif  // _VECTOR_3D_H_

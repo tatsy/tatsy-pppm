@@ -87,7 +87,7 @@ SubsurfaceIntegrator::OctreeNode* SubsurfaceIntegrator::Octree::constructRec(std
         return node;
     }
 
-    Vector3D posMid = (bbox.posMin() + bbox.posMax()) * 0.5;
+    const Vector3D posMid = (bbox.posMin() + bbox.posMax()) * 0.5;
 
     const int numPoints = static_cast<int>(ipoints.size());
     std::vector<std::vector<IrradiancePoint> > childPoints(8);
@@ -185,7 +185,7 @@ void SubsurfaceIntegrator::initialize(const Scene& scene, const RenderParameters
     // Extract triangles with BSSRDF
     std::vector<Triangle> triangles;
     for (int i = 0; i < scene.numTriangles(); i++) {
-        if (scene.getBsdf(i).type() == BSDF_TYPE_BSSRDF) {
+        if (scene.getBsdf(i).type() & BSDF_TYPE_BSSRDF) {
             triangles.push_back(scene.getTriangle(i));            
         }
     }
@@ -291,7 +291,7 @@ void SubsurfaceIntegrator::buildPhotonMap(const Scene& scene, const int numPhoto
 
             const Vector3D orientNormal = Vector3D::dot(currentRay.direction(), hitpoint.normal()) < 0.0 ? hitpoint.normal() : -hitpoint.normal();
 
-            if (bsdf.type() == BSDF_TYPE_BSSRDF) {
+            if (bsdf.type() & BSDF_TYPE_BSSRDF) {
                 // Store photon
                 omplock {
                     photons.push_back(Photon(hitpoint.position(), currentFlux, currentRay.direction(), hitpoint.normal()));

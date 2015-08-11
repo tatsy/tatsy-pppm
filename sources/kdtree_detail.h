@@ -41,6 +41,7 @@ void KdTree<Ty>::release() {
         if (*_numCopies == 0) {
             delete[] _nodes;
             delete _numCopies;
+            _nodes = NULL;
             _numCopies = NULL;
         } else {
             (*_numCopies) -= 1;
@@ -50,6 +51,9 @@ void KdTree<Ty>::release() {
 
 template <class Ty>
 void KdTree<Ty>::construct(const std::vector<Ty>& points) {
+    // Release previous tree
+    release();
+
     // Compute tree size
     const int numPoints = static_cast<int>(points.size());
     int numNodes;

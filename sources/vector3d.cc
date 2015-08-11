@@ -1,4 +1,4 @@
-#if !(defined(ENABLE_SSE2) && (defined(_M_AMD64) || defined(_M_X64)))
+#if !(defined(ENABLE_AVX) && (defined(_M_AMD64) || defined(_M_X64)))
 #define VECTOR_3D_EXPORT
 #include "vector3d.h"
 
@@ -7,6 +7,14 @@
 #include <sstream>
 
 #include "common.h"
+
+double fast_exp(double y) {
+    double d;
+    *((int*)(&d) + 0) = 0;
+    *((int*)(&d) + 1) = (int)(1512775 * y + 1072632447);
+    return d;
+}
+
 
 Vector3D::Vector3D()
     : _x(0.0)
@@ -79,7 +87,7 @@ Vector3D Vector3D::sqrt(const Vector3D& v) {
 }
 
 Vector3D Vector3D::exp(const Vector3D& v) {
-    return Vector3D(::exp(v._x), ::exp(v._y), ::exp(v._z));
+    return Vector3D(fast_exp(v._x), fast_exp(v._y), fast_exp(v._z));
 }
 
 double Vector3D::x() const { return _x; }
