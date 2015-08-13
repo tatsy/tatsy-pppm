@@ -13,9 +13,13 @@ $ cmake --build .
 
 ## Overview
 
-* **Integrator:** stochastic progressive photon mapping [Hachiska et al. 2008]
+* **Integrator:** Progressive Photon Mapping: A Probabilistic Approach [Knaus and Zwicker 2011]
 * **BSSRDF:** dipole approximation model [Jensen et al. 2001]
-* **Sampler:** Halton sampler
+* **Sampler:** permuted Halton sampler
+
+## Result
+
+![rendering result](./images/result.png)
 
 ## Acknowledgment
 
