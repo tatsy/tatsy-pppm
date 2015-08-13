@@ -38,7 +38,7 @@ KdTree<Ty>& KdTree<Ty>::operator=(const KdTree& kdtree) {
 template <class Ty>
 void KdTree<Ty>::release() {
     if (_numCopies != NULL) {
-        if (*_numCopies == 0) {
+        if ((*_numCopies) == 0) {
             delete[] _nodes;
             delete _numCopies;
             _nodes = NULL;

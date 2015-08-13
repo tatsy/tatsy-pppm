@@ -4,6 +4,7 @@
 #include "timer.h"
 #include "halton.h"
 #include "sampler.h"
+#include "reflectance.h"
 
 const double ProgressivePhotonMappingProb::ALPHA = 0.7;
 
@@ -72,6 +73,7 @@ void ProgressivePhotonMappingProb::render(const Scene& scene, const Camera& came
     }
 
     // Rendering
+    bool isFinish = false;
     _result.resize(width, height);
     Image buffer(width, height);
     buffer.fill(Vector3D(0.0, 0.0, 0.0));
@@ -106,9 +108,10 @@ void ProgressivePhotonMappingProb::render(const Scene& scene, const Camera& came
         _result.save(filename);
         printf("%.2f sec: %d / %d\n", timer.stop(), t, params.spp());
 
-        if (timer.stop() > 875.0) {
+        if (timer.stop() > 875.0 && !isFinish) {
             printf("About 15 min elapsed!!\n");
             _result.save(RESULT_DIRECTORY + "final_result.png");
+            isFinish = true;
 #ifdef __ONSITE__
             break;
 #endif
@@ -270,9 +273,30 @@ Vector3D ProgressivePhotonMappingProb::radiance(const Scene& scene, const Ray& r
 
     // Account for subsurface scattering
     if (bsdf.type() & BSDF_TYPE_BSSRDF) {
-        const double reflectProbability = 0.25 + REFLECT_PROBABILITY * 0.5;
-        Vector3D irad = _integrator->irradiance(hitpoint.position(), bsdf);
-        throughput += irad * (1.0 - reflectProbability);
+        if (bsdf.type() & BSDF_TYPE_REFRACTION) {
+            bool into = Vector3D::dot(hitpoint.normal(), ray.direction()) < 0.0;
+            const Vector3D orieintingNormal = into ? hitpoint.normal() : -hitpoint.normal();
+            Vector3D reflectDir, transmitDir;
+            double fresnelRe, fresnelTr;
+            if (checkTotalReflection(into, ray.direction(), hitpoint.normal(), orieintingNormal, &reflectDir, &transmitDir, &fresnelRe, &fresnelTr)) {
+                const Ray nextRay(hitpoint.position(), reflectDir);
+                return radiance(scene, nextRay, params, rseq, bounces + 1, bounceLimit);
+            } else {
+                const double probability = 0.25 + REFLECT_PROBABILITY * 0.5;
+                if (rands[1] < probability) {
+                    // Reflection
+                    const Ray nextRay(hitpoint.position(), reflectDir);
+                    return bsdf.reflectance() * radiance(scene, nextRay, params, rseq, bounces, bounceLimit) * (fresnelRe / probability);
+                } else {
+                    // Transmit
+                    return _integrator->irradiance(hitpoint.position(), bsdf) * (fresnelTr / (1.0 - probability));
+                }
+            }
+        } else {
+            const double probability = 0.25 + REFLECT_PROBABILITY * 0.5;
+            Vector3D irad = _integrator->irradiance(hitpoint.position(), bsdf);
+            throughput += irad * (1.0 - probability);
+        }
     }
 
     if (bsdf.type() & BSDF_TYPE_LAMBERTIAN_BRDF) {

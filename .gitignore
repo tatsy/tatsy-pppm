@@ -1,6 +1,7 @@
 build/*
 results/*
 
+
 *.png
 *.bmp
 *.jpg
@@ -8,3 +9,5 @@ results/*
 *.exe
 *.pdb
 *.dll
+
+!images/*

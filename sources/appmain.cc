@@ -16,11 +16,14 @@ void setScene(Scene* scene, Camera* camera, int imageWidth, int imageHeight) {
     trimesh.translate(Vector3D(-5.0, 0.0, 5.0));
 
     // Marble BSSRDF (from [Jensen et al. 2001])
-    const Vector3D sigmap_s = Vector3D(2.19, 2.62, 3.00) * 0.02;
-    const Vector3D sigma_a  = Vector3D(0.0021, 0.0041, 0.0071) * 0.02;
+    const Vector3D sigmap_s = Vector3D(2.19, 2.62, 3.00) * 20.0;
+    const Vector3D sigma_a  = Vector3D(0.0021, 0.0041, 0.0071) * 0.05;
 
-    // BSDF meshBsdf = PhongBRDF::factory(Vector3D(0.5, 0.5, 0.5), 16.0);
-    BSDF meshBsdf = LambertianBRDF::factory(Vector3D(0.75, 0.75, 0.75));
+    // Skin BSSRDF (from [Jensen et al. 2001])
+    // const Vector3D sigmap_s = Vector3D(0.70, 0.88, 1.01);
+    // const Vector3D sigma_a  = Vector3D(0.032, 0.17, 0.48);
+
+    BSDF meshBsdf = RefractionBSDF::factory(Vector3D(0.99, 0.99, 0.99));
     BSSRDF meshBssrdf = DipoleBSSRDF::factory(sigma_a, sigmap_s, 1.5);
     meshBsdf.setBssrdf(meshBssrdf);
 
@@ -40,7 +43,7 @@ void setScene(Scene* scene, Camera* camera, int imageWidth, int imageHeight) {
     torusMesh.putOnPlane(Plane(10.0, Vector3D(0.0, 1.0, 0.0)));
 
     // Load environment map
-    Envmap envmap(ASSET_DIRECTORY + "subway.hdr");
+    Envmap envmap(ASSET_DIRECTORY + "alley.hdr");
     
     // Set scene
     scene->add(trimesh, meshBsdf);

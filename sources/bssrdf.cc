@@ -94,9 +94,11 @@ Vector3D DipoleBSSRDF::operator()(const double d2) const {
     const Vector3D d2v(d2, d2, d2);
     Vector3D dpos = Vector3D::sqrt(d2v + _zpos * _zpos);
     Vector3D dneg = Vector3D::sqrt(d2v + _zneg * _zneg);
-    Vector3D posTerm = _zpos * (dpos * _sigma_tr + ones) * Vector3D::exp(-_sigma_tr * dpos) / (dpos * dpos * dpos);
-    Vector3D negTerm = _zneg * (dneg * _sigma_tr + ones) * Vector3D::exp(-_sigma_tr * dneg) / (dneg * dneg * dneg);
-    Vector3D ret = (_alphap / (4.0 * PI * _sigma_tr)) * (posTerm + negTerm);
+    Vector3D dpos3 = dpos * dpos * dpos;
+    Vector3D dneg3 = dneg * dneg * dneg;
+    Vector3D posTerm = _zpos * (dpos * _sigma_tr + ones) * Vector3D::exp(-_sigma_tr * dpos);
+    Vector3D negTerm = _zneg * (dneg * _sigma_tr + ones) * Vector3D::exp(-_sigma_tr * dneg);
+    Vector3D ret = (_alphap * (posTerm * dneg3 + negTerm * dpos3)) / ((4.0 * PI) * _sigma_tr * dpos3 * dneg3);
     return ret;
 }
 

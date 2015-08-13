@@ -47,9 +47,9 @@ void SubsurfaceIntegrator::Octree::release() {
         if ((*_numCopies) == 0) {
             deleteNode(_root);
             delete _numCopies;
+            _root = NULL;
             _numCopies = NULL;
-        }
-        else {
+        } else {
             (*_numCopies) -= 1;
         }
     }
@@ -65,6 +65,10 @@ void SubsurfaceIntegrator::Octree::deleteNode(SubsurfaceIntegrator::OctreeNode* 
 }
 
 void SubsurfaceIntegrator::Octree::construct(SubsurfaceIntegrator* parent, std::vector<IrradiancePoint>& ipoints) {
+    // Release current octree
+    this->release();
+
+    // Compute new octree
     this->_parent = parent;
     const int numHitpoints = static_cast<int>(ipoints.size());
         
@@ -72,7 +76,7 @@ void SubsurfaceIntegrator::Octree::construct(SubsurfaceIntegrator* parent, std::
     for (int i = 0; i < numHitpoints; i++) {
         bbox.merge(ipoints[i].pos);
     }
-
+    _numCopies = new int(0);
     _root = constructRec(ipoints, bbox);
 }
 
@@ -118,7 +122,7 @@ SubsurfaceIntegrator::OctreeNode* SubsurfaceIntegrator::Octree::constructRec(std
     int childCount = 0;
     for (int i = 0; i < 8; i++) {
         if (node->children[i] != NULL) {
-            double w = luminance(node->children[i]->pt.irad);
+            const double w = luminance(node->children[i]->pt.irad);
             node->pt.pos += w * node->children[i]->pt.pos;
             node->pt.normal += w * node->children[i]->pt.normal;
             node->pt.area += node->children[i]->pt.area;
@@ -235,78 +239,91 @@ Vector3D SubsurfaceIntegrator::irradiance(const Vector3D& p, const BSDF& bsdf) c
 
 void SubsurfaceIntegrator::buildPhotonMap(const Scene& scene, const int numPhotons, const int bounceLimit) {
     std::cout << "Shooting photons ..." << std::endl;
+    int proc = 0;
 
-    Random rand = Random((unsigned int)time(NULL));
+    const int taskPerThread = (numPhotons + OMP_NUM_CORE - 1) / OMP_NUM_CORE;
+
+    RandomSampler* rand = new RandomSampler[OMP_NUM_CORE];
+    for (int i = 0; i < OMP_NUM_CORE; i++) {
+        rand[i] = Random::generateSampler((unsigned long)time(NULL) + i);
+    }
 
     // Shooting photons
-    std::vector<Photon> photons;
-    int proc = 0;
-    ompfor (int pid = 0; pid < numPhotons; pid++) {
-        RandomSequence rseq;
-        omplock {
-            rand.request(200, &rseq);
-        }
+    std::vector<std::vector<Photon> > photons(OMP_NUM_CORE);
+    for (int i = 0; i < taskPerThread; i++) {
+        ompfor (int threadID = 0; threadID < OMP_NUM_CORE; threadID++) {
+            RandomSequence rseq;
+            rand[threadID].request(200, &rseq);
 
-        Photon photon = scene.envmap().samplePhoton(rseq, numPhotons);
+            Photon photon = scene.envmap().samplePhoton(rseq, numPhotons);
 
-        const Vector3D& lightNormal = photon.normal();
-        const Vector3D& lightPos    = static_cast<Vector3D>(photon);
-        Vector3D currentFlux = photon.flux();
+            const Vector3D& lightNormal = photon.normal();
+            const Vector3D& lightPos    = static_cast<Vector3D>(photon);
+            Vector3D currentFlux = photon.flux();
 
-        const double r1 = rseq.pop();
-        const double r2 = rseq.pop();
-        Vector3D nextDir;
-        sampler::onHemisphere(lightNormal, &nextDir, r1, r2);
-        Ray currentRay(lightPos, nextDir);
+            const double r1 = rseq.pop();
+            const double r2 = rseq.pop();
+        
+            Vector3D nextDir;
+            sampler::onHemisphere(lightNormal, &nextDir, r1, r2);
+            Ray currentRay(lightPos, nextDir);
 
-        for (int bounce = 0; ; bounce++) {
-            std::vector<double> randnums;
+            for (int bounce = 0; ; bounce++) {
+                double rands[3] = { rseq.pop(), rseq.pop(), rseq.pop() }; 
 
-            double rands[2] = { rseq.pop(), rseq.pop() }; 
-
-            // Remove photon with zero flux
-            if (std::max(currentFlux.x(), std::max(currentFlux.y(), currentFlux.z())) <= 0.0 || bounce > bounceLimit) {
-                break;
-            }
-
-            Intersection isect;
-            bool isHit = scene.intersect(currentRay, isect);
-            if (!isHit) {
-                break;
-            }
-
-            const int objectID = isect.objectID();
-            const BSDF& bsdf = scene.getBsdf(objectID);
-            const Hitpoint& hitpoint = isect.hitpoint();
-
-            const Vector3D orientNormal = Vector3D::dot(currentRay.direction(), hitpoint.normal()) < 0.0 ? hitpoint.normal() : -hitpoint.normal();
-
-            if (bsdf.type() & BSDF_TYPE_BSSRDF) {
-                // Store photon
-                omplock {
-                    photons.push_back(Photon(hitpoint.position(), currentFlux, currentRay.direction(), hitpoint.normal()));
+                // Remove photon with zero flux
+                if (bounce >= bounceLimit || std::max(currentFlux.x(), std::max(currentFlux.y(), currentFlux.z())) <= 0.0) {
+                    break;
                 }
-                break;
-            } else {
+
+                Intersection isect;
+                bool isHit = scene.intersect(currentRay, isect);
+                if (!isHit) {
+                    break;
+                }
+
+                const int objectID = isect.objectID();
+                const BSDF& bsdf = scene.getBsdf(objectID);
+                const Hitpoint& hitpoint = isect.hitpoint();
+
+                double roulette = 1.0;
+                if (bsdf.type() & BSDF_TYPE_BSSRDF) {
+                    // Store photon
+                    photons[threadID].push_back(Photon(hitpoint.position(), currentFlux, currentRay.direction(), hitpoint.normal()));
+
+                    // Roulette
+                    const double probability = (currentFlux.x() + currentFlux.y() + currentFlux.z()) / 3.0;
+                    if (rands[0] >= probability) {
+                        break;
+                    }
+                }
+
                 double pdf = 1.0;
-                bsdf.sample(currentRay.direction(), orientNormal, rands[0], rands[1], &nextDir, &pdf);
+                bsdf.sample(currentRay.direction(), hitpoint.normal(), rands[1], rands[2], &nextDir, &pdf);
                 currentRay = Ray(hitpoint.position(), nextDir);
-                currentFlux = currentFlux * bsdf.reflectance();
+                currentFlux = currentFlux * bsdf.reflectance() / (roulette * pdf);
             }
         }
 
-        omplock {
-            proc++;
-            if (proc % 1000 == 0) {
-                printf("%6.2f %% processed ...\r", 100.0 * proc / numPhotons);
-            }
+        proc += OMP_NUM_CORE;
+        if (proc % 1000 == 0) {
+            printf("%6.2f %% processed ...\r", 100.0 * proc / numPhotons);
         }
     }
     printf("\n");
+    delete[] rand;
 
     // Construct photon map
+    std::vector<Photon> photonsAll;
+    photonsAll.reserve(numPhotons);
+    for (int i = 0; i < OMP_NUM_CORE; i++) {
+        const int np = (int)photons[i].size();
+        for (int j = 0; j < np; j++) {
+            photonsAll.push_back(photons[i][j]);
+        }
+    }
     photonMap.clear();
-    photonMap.construct(photons);
+    photonMap.construct(photonsAll);
 }
 
 Vector3D SubsurfaceIntegrator::irradianceWithPM(const Vector3D& p, const Vector3D& n, const RenderParameters& params) const {
@@ -323,7 +340,7 @@ Vector3D SubsurfaceIntegrator::irradianceWithPM(const Vector3D& p, const Vector3
     for (int i = 0; i < numPhotons; i++) {
         Vector3D diff = query - photons[i];
         double dist = diff.norm();
-        if (std::abs(Vector3D::dot(n, diff)) < diff.norm() * 0.1) {
+        if (std::abs(Vector3D::dot(n, diff)) < diff.norm() * 0.3) {
             validPhotons.push_back(photons[i]);
             distances.push_back(dist);
             maxdist = std::max(maxdist, dist);
@@ -336,13 +353,13 @@ Vector3D SubsurfaceIntegrator::irradianceWithPM(const Vector3D& p, const Vector3
     Vector3D totalFlux = Vector3D(0.0, 0.0, 0.0);
     for (int i = 0; i < numValidPhotons; i++) {
         const double w = 1.0 - (distances[i] / (k * maxdist));
-        const Vector3D v = Vector3D(photons[i].flux() / PI);
+        const Vector3D v = photons[i].flux() * invPI;
         totalFlux += w * v;
     }
     totalFlux /= (1.0 - 2.0 / (3.0 * k));
 
     if (maxdist > EPS) {
-        return Vector3D(totalFlux / (PI * maxdist * maxdist));
+        return totalFlux / (PI * maxdist * maxdist);
     }
     return Vector3D(0.0, 0.0, 0.0);
 }
