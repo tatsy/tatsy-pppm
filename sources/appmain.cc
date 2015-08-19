@@ -1,9 +1,12 @@
 #include "renderer.h"
 
+#include <iostream>
 #include <cstdio>
 #include <string>
 
 void setScene(Scene* scene, Camera* camera, int imageWidth, int imageHeight) {
+    std::cout << "Preparing the scene -> ";
+
     // Parameters
     const int tiles = 8;
     const double tileSize = 8.0;
@@ -35,6 +38,14 @@ void setScene(Scene* scene, Camera* camera, int imageWidth, int imageHeight) {
     titleMesh.putOnPlane(Plane(10.0, Vector3D(0.0, 1.0, 0.0)));
     titleMesh.translate(Vector3D(20.0, 0.0, -5.0));
 
+    // Bunny mesh
+    Trimesh bunnyMesh;
+    bunnyMesh.load(ASSET_DIRECTORY + "bunny.ply");
+    bunnyMesh.fitToBBox(BBox(-5.0, -5.0, -5.0, 5.0, 5.0, 5.0));
+    bunnyMesh.scale(0.7);
+    bunnyMesh.putOnPlane(Plane(10.0, Vector3D(0.0, 1.0, 0.0)));
+    bunnyMesh.translate(Vector3D(5.0, 0.0, -10.0));
+
     // Load torus mesh
     Trimesh torusMesh;
     torusMesh.load(ASSET_DIRECTORY + "torus.ply");
@@ -48,7 +59,8 @@ void setScene(Scene* scene, Camera* camera, int imageWidth, int imageHeight) {
     // Set scene
     scene->add(trimesh, meshBsdf);
     scene->add(titleMesh, LambertianBRDF::factory(Vector3D(0.70, 0.30, 0.30)));
-    scene->add(torusMesh, RefractionBSDF::factory(Vector3D(0.50, 0.50, 0.95)));
+    scene->add(torusMesh, RefractionBSDF::factory(Vector3D(0.75, 0.75, 0.99)));
+    scene->add(bunnyMesh, LambertianBRDF::factory(Vector3D(0.75, 0.75, 0.75)));
     scene->setEnvmap(envmap);
 
     // Set floor
@@ -73,10 +85,11 @@ void setScene(Scene* scene, Camera* camera, int imageWidth, int imageHeight) {
     // Set camera
     Vector3D eye(-20.0, 5.0, -20.0);
     *camera = Camera(eye, -eye.normalized(), Vector3D(0.0, 1.0, 0.0), 45.0, imageWidth, imageHeight, 1.0);
+
+    std::cout << "OK" << std::endl;
 }
 
 int main(int argc, char** argv) {
-
     const int imageWidth  = argc >= 2 ? atoi(argv[1]) : 1280;
     const int imageHeight = argc >= 3 ? atoi(argv[2]) : 720;
     const int spp         = argc >= 4 ? atoi(argv[3]) : 10240;
@@ -86,13 +99,13 @@ int main(int argc, char** argv) {
     setScene(&scene, &camera, imageWidth, imageHeight);
 
     // Set render parameters
-    RenderParameters params(2000000, spp, 16.0);
+    RenderParameters params(2000000, spp, 128, 16.0);
 
     // Set renderer
     ProgressivePhotonMappingProb ppmapa;
-    ppmapa.render(scene, camera, params);
+    ppmapa.render(scene, camera, params, RANDOM_SAMPLER_QUASI_MONTE_CARLO);
     // ProgressivePhotonMapping ppm;
     // ppm.render(scene, camera, params);
     // PathTracing pathtrace;
-    // pathtrace.render(scene, camera, params, true);
+    // pathtrace.render(scene, camera, params);
 }

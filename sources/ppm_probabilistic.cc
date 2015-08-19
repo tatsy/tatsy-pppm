@@ -94,11 +94,9 @@ void ProgressivePhotonMappingProb::render(const Scene& scene, const Camera& came
         _radius = (t + 1.0) / (t + ALPHA) * _radius;
 
         // Save intermediate result
-        for (int i = 0; i < OMP_NUM_CORE; i++) {
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    _result.pixel(x, height - y - 1) = buffer(x, y) / t;
-                }
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                _result.pixel(x, height - y - 1) = buffer(x, y) / t;
             }
         }
         _result.gamma(2.2, true);
@@ -142,7 +140,7 @@ void ProgressivePhotonMappingProb::tracePhotons(const Scene& scene, const Camera
 
             Vector3D currentFlux = photon.flux();
 
-            Vector3D nextDir; 
+            Vector3D nextDir;
             sampler::onHemisphere(normalLight, &nextDir, rseq.pop(), rseq.pop());
 
             Ray currentRay(posLight, nextDir);
@@ -313,7 +311,7 @@ Vector3D ProgressivePhotonMappingProb::radiance(const Scene& scene, const Ray& r
         for (int i = 0; i < numPhotons; i++) {
             Vector3D diff = query - photons[i];
             double dist = diff.norm();
-            if (std::abs(Vector3D::dot(hitpoint.normal(), diff)) < diff.norm() * 0.3) {
+            if (std::abs(Vector3D::dot(hitpoint.normal(), diff) / dist) < _radius * _radius * 0.01) {
                 validPhotons.push_back(photons[i]);
                 distances.push_back(dist);
                 maxdist = std::max(maxdist, dist);

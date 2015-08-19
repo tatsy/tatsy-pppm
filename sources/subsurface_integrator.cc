@@ -340,7 +340,7 @@ Vector3D SubsurfaceIntegrator::irradianceWithPM(const Vector3D& p, const Vector3
     for (int i = 0; i < numPhotons; i++) {
         Vector3D diff = query - photons[i];
         double dist = diff.norm();
-        if (std::abs(Vector3D::dot(n, diff)) < diff.norm() * 0.3) {
+        if (std::abs(Vector3D::dot(n, diff) / dist) < params.gatherPhotons() * params.gatherPhotons() * 0.01) {
             validPhotons.push_back(photons[i]);
             distances.push_back(dist);
             maxdist = std::max(maxdist, dist);
