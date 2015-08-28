@@ -34,7 +34,6 @@ do { \
 #define Assertion(PREDICATE, MSG) do {} while (false)
 #endif  // NDEBUG
 
-
 // ----------------------------------------------------------------------------
 // Special functions
 // ----------------------------------------------------------------------------
@@ -76,6 +75,23 @@ inline T clamp(T v, T lo, T hi) {
     #define align_attrib(typ, siz) __declspec(align(siz)) typ
 #else
     #define align_attrib(typ, siz) typ __attribute__((aligned(siz)))
+#endif
+
+
+#if defined(_WIN32) || defined(__WIN32__)
+inline void* align_alloc(size_t size, size_t alignsize) {
+    return _aligned_malloc(size, alignsize);
+}
+inline void align_free(void* mem) {
+    _aligned_free(mem); 
+}
+#else
+inline void* align_alloc(size_t size, size_t alignsize) {
+    void* mem = nullptr;
+    int ret = posix_memalign((void**)&mem, alignsize, size);
+    return (ret == 0) ? mem : nullptr;
+}
+inline void align_free(void* mem) { free(mem); }
 #endif
 
 // ----------------------------------------------------------------------------

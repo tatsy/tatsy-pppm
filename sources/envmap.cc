@@ -51,10 +51,12 @@ Vector3D Envmap::sampleFromDir(const Vector3D& dir) const {
     const double iblv = theta / PI;
     const double iblu = phi / (2.0 * PI);
 
-    const double iblx = clamp(iblu * _image.width(),  0.0, _image.width()  - 1.0);
-    const double ibly = clamp(iblv * _image.height(), 0.0, _image.height() - 1.0);
-
-    return _image((int)iblx, (int)ibly);
+    const double iblx = iblu * _image.width();
+    const double ibly = iblv * _image.height();
+    
+    const int ix = clamp((int)iblx, 0, (int)_image.width() - 1);
+    const int iy = clamp((int)ibly, 0, (int)_image.height() - 1);
+    return _image(ix, iy);
 }
 
 Photon Envmap::samplePhoton(RandomSequence& rseq, const int numPhotons) const {

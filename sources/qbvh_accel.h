@@ -62,4 +62,3 @@ private:
 };
 
 #endif  // _SPICA_QBVH_ACCEL_H_
-

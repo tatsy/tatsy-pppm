@@ -271,7 +271,7 @@ int QBVHAccel::intersect(const Ray& ray, Hitpoint* hitpoint) const {
 
         int hitMask = _mm_movemask_ps(_mm_cmpge_ps(tMax, tMin));
         if (hitMask != 0) {
-            int sepMask = (sgn[node->sepAxes[2]] << 2) | (sgn[node->sepAxes[1]] << 1) | (sgn[node->sepAxes[0]]);
+            int sepMask = (sgn[node->sepAxes[0]] << 2) | (sgn[node->sepAxes[1]] << 1) | (sgn[node->sepAxes[2]]);
             int ordMask = orderTable[hitMask * 8 + sepMask];
             for (int i = 0; i < 4; i++) {    
                 if (ordMask & 0x04) break;

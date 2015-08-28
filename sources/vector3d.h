@@ -69,6 +69,7 @@ public:
 
     static Vector3D sqrt(const Vector3D& v);
     static Vector3D exp(const Vector3D& v);
+    static Vector3D clamp(const Vector3D& v, const Vector3D& lo = Vector3D(0.0, 0.0, 0.0), const Vector3D& hi = Vector3D(INFTY, INFTY, INFTY));
 
     inline double x() const;
     inline double y() const;

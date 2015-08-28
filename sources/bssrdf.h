@@ -24,11 +24,12 @@ class BSSRDF;
 class BSSRDF_DLL BSSRDFBase {
 protected:
     double _eta;
+    double _scale;
 
 protected:
-    explicit BSSRDFBase(double eta = 1.3) : _eta(eta) {}
-    explicit BSSRDFBase(const BSSRDFBase& base) : _eta(base._eta) {}
-    BSSRDFBase& operator=(const BSSRDFBase& base) { _eta = base._eta; return *this; }
+    explicit BSSRDFBase(double eta = 1.3, double scale = 1.0) : _eta(eta), _scale(scale) {}
+    explicit BSSRDFBase(const BSSRDFBase& base) : _eta(base._eta), _scale(base._scale) {}
+    BSSRDFBase& operator=(const BSSRDFBase& base) { _eta = base._eta; _scale = base._scale; return *this; }
 
 public:
     virtual ~BSSRDFBase() {}
@@ -54,12 +55,12 @@ private:
 
 private:
     DipoleBSSRDF();
-    DipoleBSSRDF(const Vector3D& sigma_a, const Vector3D& sigmap_s, double eta = 1.3);
+    DipoleBSSRDF(const Vector3D& sigma_a, const Vector3D& sigmap_s, double eta = 1.3, double scale = 1.0);
     DipoleBSSRDF(const DipoleBSSRDF& bssrdf);
     DipoleBSSRDF& operator=(const DipoleBSSRDF& bssrdf);
 
 public:
-    static BSSRDF factory(const Vector3D& sigma_a, const Vector3D& sigmap_s, double eta = 1.3);
+    static BSSRDF factory(const Vector3D& sigma_a, const Vector3D& sigmap_s, double eta = 1.3, double scale = 1.0);
     Vector3D operator()(const double d2) const override;
     BSSRDFBase* clone() const override;
 };

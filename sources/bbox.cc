@@ -39,6 +39,14 @@ BBox& BBox::operator=(const BBox& box) {
     return *this;
 }
 
+BBox BBox::fromTriangle(const Triangle& t) {
+    BBox retval;
+    retval.merge(t.p(0));
+    retval.merge(t.p(1));
+    retval.merge(t.p(2));
+    return retval;
+}
+
 void BBox::merge(const Vector3D& v) {
     _posMin = Vector3D::minimum(_posMin, v);
     _posMax = Vector3D::maximum(_posMax, v);
@@ -55,10 +63,34 @@ void BBox::merge(const Triangle& t) {
     }
 }
 
+BBox BBox::merge(const BBox& b1, const BBox& b2) {
+    BBox retval = b1;
+    retval.merge(b2);
+    return retval;
+}
+
+int BBox::maximumExtent() const {
+    Vector3D b = _posMax - _posMax;
+    double bx = std::abs(b.x());
+    double by = std::abs(b.y());
+    double bz = std::abs(b.z());
+    if (bx >= by && bx >= bz) return 0;
+    if (by >= bx && by >= bz) return 1;
+    return 2;
+}
+
 bool BBox::inside(const Vector3D& v) const {
     return (_posMin.x() <= v.x() && v.x() <= _posMax.x()) &&
            (_posMin.y() <= v.y() && v.y() <= _posMax.y()) &&
            (_posMin.z() <= v.z() && v.z() <= _posMax.z());
+}
+
+double BBox::area() const {
+    Vector3D b = _posMax - _posMin;
+    double bx = std::abs(b.x());
+    double by = std::abs(b.y());
+    double bz = std::abs(b.z());
+    return 2.0 * (bx * by + by * bz + bz * bx);
 }
 
 bool BBox::intersect(const Ray& ray, double* tMin, double* tMax) const {

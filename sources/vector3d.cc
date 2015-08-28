@@ -90,6 +90,10 @@ Vector3D Vector3D::exp(const Vector3D& v) {
     return Vector3D(fast_exp(v._x), fast_exp(v._y), fast_exp(v._z));
 }
 
+Vector3D Vector3D::clamp(const Vector3D& v, const Vector3D& lo, const Vector3D& hi) {
+    return Vector3D::maximum(lo, Vector3D::minimum(v, hi));
+}
+
 double Vector3D::x() const { return _x; }
 double Vector3D::y() const { return _y; }
 double Vector3D::z() const { return _z; }

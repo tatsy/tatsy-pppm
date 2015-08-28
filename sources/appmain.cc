@@ -19,22 +19,34 @@ void setScene(Scene* scene, Camera* camera, int imageWidth, int imageHeight) {
     trimesh.translate(Vector3D(-5.0, 0.0, 5.0));
 
     // Marble BSSRDF (from [Jensen et al. 2001])
-    const Vector3D sigmap_s = Vector3D(2.19, 2.62, 3.00) * 20.0;
-    const Vector3D sigma_a  = Vector3D(0.0021, 0.0041, 0.0071) * 0.05;
+    const Vector3D sigmap_s = Vector3D(2.19, 2.62, 3.00);
+    const Vector3D sigma_a  = Vector3D(0.0021, 0.0041, 0.0071);
 
     // Skin BSSRDF (from [Jensen et al. 2001])
-    // const Vector3D sigmap_s = Vector3D(0.70, 0.88, 1.01);
-    // const Vector3D sigma_a  = Vector3D(0.032, 0.17, 0.48);
+    // const Vector3D sigmap_s = Vector3D(1.09, 1.59, 1.79);
+    // const Vector3D sigma_a  = Vector3D(0.013, 0.070, 0.145);
+
+    // Skim milk BSSRDF
+    // const Vector3D sigmap_s(0.70, 1.22, 1.90);
+    // const Vector3D sigma_a(0.0014, 0.0025, 0.0142);
+
+    // Whole milk BSSRDF
+    // const Vector3D sigmap_s(2.55, 3.21, 3.77);
+    // const Vector3D sigma_a(0.0011, 0.0024, 0.014);
+
+    // Cream BSSRDF
+    // const Vector3D sigmap_s(7.38, 5.47, 3.15);
+    // const Vector3D sigma_a(0.0002, 0.0028, 0.0163);
 
     BSDF meshBsdf = RefractionBSDF::factory(Vector3D(0.99, 0.99, 0.99));
-    BSSRDF meshBssrdf = DipoleBSSRDF::factory(sigma_a, sigmap_s, 1.5);
+    BSSRDF meshBssrdf = DipoleBSSRDF::factory(sigma_a, sigmap_s, 1.5, 1.0);
     meshBsdf.setBssrdf(meshBssrdf);
 
     // Load title
     Trimesh titleMesh;
     titleMesh.load(ASSET_DIRECTORY + "rt3.ply");
     titleMesh.fitToBBox(BBox(-10.0, -10.0, -10.0, 10.0, 10.0, 10.0));
-    titleMesh.scale(1.2);
+    titleMesh.scale(1.5);
     titleMesh.putOnPlane(Plane(10.0, Vector3D(0.0, 1.0, 0.0)));
     titleMesh.translate(Vector3D(20.0, 0.0, -5.0));
 
@@ -42,7 +54,7 @@ void setScene(Scene* scene, Camera* camera, int imageWidth, int imageHeight) {
     Trimesh bunnyMesh;
     bunnyMesh.load(ASSET_DIRECTORY + "bunny.ply");
     bunnyMesh.fitToBBox(BBox(-5.0, -5.0, -5.0, 5.0, 5.0, 5.0));
-    bunnyMesh.scale(0.7);
+    bunnyMesh.scale(0.8);
     bunnyMesh.putOnPlane(Plane(10.0, Vector3D(0.0, 1.0, 0.0)));
     bunnyMesh.translate(Vector3D(5.0, 0.0, -10.0));
 
@@ -54,7 +66,7 @@ void setScene(Scene* scene, Camera* camera, int imageWidth, int imageHeight) {
     torusMesh.putOnPlane(Plane(10.0, Vector3D(0.0, 1.0, 0.0)));
 
     // Load environment map
-    Envmap envmap(ASSET_DIRECTORY + "alley.hdr");
+    Envmap envmap(ASSET_DIRECTORY + "sunrise.hdr");
     
     // Set scene
     scene->add(trimesh, meshBsdf);
@@ -83,15 +95,15 @@ void setScene(Scene* scene, Camera* camera, int imageWidth, int imageHeight) {
     scene->setAccelerator();
 
     // Set camera
-    Vector3D eye(-20.0, 5.0, -20.0);
+    Vector3D eye(-25.0, 5.0, -18.0);
     *camera = Camera(eye, -eye.normalized(), Vector3D(0.0, 1.0, 0.0), 45.0, imageWidth, imageHeight, 1.0);
 
     std::cout << "OK" << std::endl;
 }
 
 int main(int argc, char** argv) {
-    const int imageWidth  = argc >= 2 ? atoi(argv[1]) : 1280;
-    const int imageHeight = argc >= 3 ? atoi(argv[2]) : 720;
+    const int imageWidth  = argc >= 2 ? atoi(argv[1]) : 1920;
+    const int imageHeight = argc >= 3 ? atoi(argv[2]) : 1080;
     const int spp         = argc >= 4 ? atoi(argv[3]) : 10240;
 
     Scene scene;
@@ -103,7 +115,7 @@ int main(int argc, char** argv) {
 
     // Set renderer
     ProgressivePhotonMappingProb ppmapa;
-    ppmapa.render(scene, camera, params, RANDOM_SAMPLER_QUASI_MONTE_CARLO);
+    ppmapa.render(scene, camera, params);
     // ProgressivePhotonMapping ppm;
     // ppm.render(scene, camera, params);
     // PathTracing pathtrace;
