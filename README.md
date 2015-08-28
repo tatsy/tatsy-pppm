@@ -1,21 +1,20 @@
-sppm-for-rt3
+tatsy-pppm
 ===
 
-> Stochastic progressive photon mapping renderer for "Ray tracing camp 3!!!"
+> Phisically-based path tracer for [Ray tracing camp 3!!!](https://sites.google.com/site/raytracingcamp3/)
 
 ## Installation
 
 ```shell
 $ git clone https://github.com/tatsy/photon-diffusion.git
-$ cmake .
+$ cmake -DENABLE_AVX=OFF .
 $ cmake --build .
 ```
 
 ## Overview
 
 * **Integrator:** Progressive Photon Mapping: A Probabilistic Approach [Knaus and Zwicker 2011]
-* **BSSRDF:** dipole approximation model [Jensen et al. 2001]
-* **Sampler:** permuted Halton sampler
+* **BSSRDF:** Dipole diffusion model [Jensen et al. 2001]
 
 ## Result
 
