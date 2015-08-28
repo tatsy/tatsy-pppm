@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.0)
-project(spica_for_rt3)
+project(tatsy_pppm)
 
 # For onsite
 option(ONSITE_BUILD "ONSITE_BUILD" OFF)

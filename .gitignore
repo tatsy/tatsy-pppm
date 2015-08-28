@@ -1,6 +1,7 @@
 build/*
 results/*
 
+sources/directories.h
 
 *.png
 *.bmp

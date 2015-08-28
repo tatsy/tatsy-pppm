@@ -3,7 +3,7 @@
 
 #include <string>
 
-static const std::string ASSET_DIRECTORY = "C:/Users/Tatsuya/Documents/VS2013/Projects/photon-diffusion/assets/";
-static const std::string RESULT_DIRECTORY = "C:/Users/Tatsuya/Documents/VS2013/Projects/photon-diffusion/results/";
+static const std::string ASSET_DIRECTORY = "C:/Users/Tatsuya/Desktop/Lab/tatsy-pppm/assets/";
+static const std::string RESULT_DIRECTORY = "C:/Users/Tatsuya/Desktop/Lab/tatsy-pppm/results/";
 
 #endif  // _DIRECTORIES_H_

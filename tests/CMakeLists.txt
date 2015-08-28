@@ -30,7 +30,7 @@ if (${BUILD_TEST} STREQUAL "ON")
   add_executable(${TEST_NAME} ${SOURCE_FILES})
 
   target_link_libraries(${TEST_NAME} ${GTEST_LIBRARIES})
-  target_link_libraries(${TEST_NAME} "${LIB_PREFIX}photon_diffusion${LIB_POSTFIX}")
+  target_link_libraries(${TEST_NAME} "${LIB_PREFIX}tatsy_pppm${LIB_POSTFIX}")
 
   add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
   add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose DEPENDS ${TEST_NAME})
