@@ -1,0 +1,24 @@
+language: cpp
+sudo: false
+compiler:
+    - gcc
+    - clang
+
+before_script:
+    - g++ --version
+    - clang++ --version
+    - cmake --version
+
+script:
+    - cmake -DENABLE_AVX=OFF -DBUILD_TEST=OFF .
+    - cmake --build .
+
+branches:
+    only:
+        - master
+        - development
+
+notifications:
+    recipients: tatsy.mail@gmail.com
+    on_success: change
+    on_failure: always

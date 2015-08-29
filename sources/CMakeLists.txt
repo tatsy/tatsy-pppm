@@ -94,14 +94,14 @@ source_group(Render FILES ${SOURCE_RENDER} ${HEADER_RENDER})
 add_executable(appmain appmain.cc)
 
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
-target_link_libraries(appmain ${LIB_PREFIX}tatsy_pppm${LIB_SUFFIX})
+target_link_libraries(appmain ${LIB_PREFIX}tatsy_pppm${LIB_POSTFIX})
 
 if (${ONSITE_BUILD} STREQUAL "ON")
   set(ASSET_DIRECTORY "assets")
   set(RESULT_DIRECTORY ".")
 else()
-  set(ASSET_DIRECTORY "${CMAKTE_SOURCE_DIR}/assets")
-  set(RESULT_DIRECTORY "${CMAKTE_SOURCE_DIR}/results")
+  set(ASSET_DIRECTORY "${CMAKE_SOURCE_DIR}/assets")
+  set(RESULT_DIRECTORY "${CMAKE_SOURCE_DIR}/results")
   file(MAKE_DIRECTORY ${RESULT_DIRECTORY})
 endif()
 
