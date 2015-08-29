@@ -16,7 +16,7 @@
 #include "ray.h"
 
 // ----------------------------------------
-// Axis-aligned bounding box
+// ! AABB
 // ----------------------------------------    
 class BBOX_DLL BBox {
 private:
@@ -25,7 +25,8 @@ private:
         
 public:
     BBox();
-    explicit BBox(double minX, double minY, double minZ, double maxX, double maxY, double maxZ);
+    explicit BBox(double minX, double minY, double minZ,
+                  double maxX, double maxY, double maxZ);
     explicit BBox(const Vector3D& posMin, const Vector3D& posMax);
     BBox(const BBox& box);
 
@@ -53,6 +54,5 @@ public:
     inline Vector3D posMin() const { return _posMin; }
     inline Vector3D posMax() const { return _posMax; }
 };
-
 
 #endif  // _SPICA_BBOX_H_

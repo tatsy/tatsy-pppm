@@ -10,7 +10,7 @@ endif()
 
 configure_file(directories.h.in ${CMAKE_CURRENT_LIST_DIR}/directories.h @ONLY)
 
-set(SOURCE_CORE${SOURCE_CORE}
+set(SOURCE_CORE ${SOURCE_CORE}
     vector3d.cc
     vector3d_avx.cc
     random.cc
@@ -34,7 +34,7 @@ set(SOURCE_CORE${SOURCE_CORE}
     sampler.cc
     photon_map.cc)
 
-set(SOURCE_RENDER
+set(SOURCE_RENDER ${SOURCE_RENDER}
     path_tracing.cc
     progressive_photon_mapping.cc
     ppm_probabilistic.cc
@@ -86,7 +86,7 @@ set(HEADER_RENDER ${HEADER_RENDER}
     ppm_probabilistic.h
     subsurface_integrator.h)
 
-add_library(tatsy_pppm SHARED ${SOURCE_CORE} ${HEADER_CORE} ${SOURCE_RENDER} ${HEARER_RENDER})
+add_library(tatsy_pppm SHARED ${SOURCE_CORE} ${HEADER_CORE} ${SOURCE_RENDER} ${HEADER_RENDER})
 
 source_group(Core FILES ${SOURCE_CORE} ${HEADER_CORE})
 source_group(Render FILES ${SOURCE_RENDER} ${HEADER_RENDER})
