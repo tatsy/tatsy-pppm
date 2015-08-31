@@ -2,13 +2,13 @@
 #define _PROGRESSIVE_PHOTON_MAPPING_H_
 
 #if defined(_WIN32) || defined(__WIN32__)
-    #ifdef PROGRESSIVe_PHOTON_MAPPING_EXPORT
-        #define PROGRESSIVe_PHOTON_MAPPING_DLL __declspec(dllexport)
+    #ifdef PROGRESSIVE_PHOTON_MAPPING_EXPORT
+        #define PROGRESSIVE_PHOTON_MAPPING_DLL __declspec(dllexport)
     #else
-        #define PROGRESSIVe_PHOTON_MAPPING_DLL __declspec(dllimport)
+        #define PROGRESSIVE_PHOTON_MAPPING_DLL __declspec(dllimport)
     #endif
 #else
-    #define PROGRESSIVe_PHOTON_MAPPING_DLL
+    #define PROGRESSIVE_PHOTON_MAPPING_DLL
 #endif
 
 
@@ -22,7 +22,9 @@
 #include "hash_grid.h"
 #include "render_parameters.h"
 
-class PROGRESSIVe_PHOTON_MAPPING_DLL ProgressivePhotonMapping {
+class SubsurfaceIntegrator;
+
+class PROGRESSIVE_PHOTON_MAPPING_DLL ProgressivePhotonMapping {
 private:
     struct RenderPoint : Vector3D {
         Vector3D normal;

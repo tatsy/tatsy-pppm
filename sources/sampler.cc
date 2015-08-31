@@ -10,7 +10,7 @@ namespace sampler {
 
     namespace {
 
-        Random rng = Random();
+        Random rng;
 
     }
 
@@ -28,7 +28,7 @@ namespace sampler {
         const double t = 2.0 * PI * r1;
         const double z2 = r2;
         const double z2s = sqrt(z2);
-        *direction = (u * cos(t) * z2s + v * sin(t) * z2s + w * sqrt(1.0 - z2)).normalized();        
+        *direction = (u * cos(t) * z2s + v * sin(t) * z2s + w * sqrt(1.0 - z2)).normalized();
     }
 
 

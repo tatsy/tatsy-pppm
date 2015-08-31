@@ -1,4 +1,4 @@
-#define PROGRESSIVe_PHOTON_MAPPING_EXPORT
+#define PROGRESSIVE_PHOTON_MAPPING_EXPORT
 #include "progressive_photon_mapping.h"
 
 #include <ctime>

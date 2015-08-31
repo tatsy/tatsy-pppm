@@ -91,24 +91,10 @@ add_library(tatsy_pppm SHARED ${SOURCE_CORE} ${HEADER_CORE} ${SOURCE_RENDER} ${H
 source_group(Core FILES ${SOURCE_CORE} ${HEADER_CORE})
 source_group(Render FILES ${SOURCE_RENDER} ${HEADER_RENDER})
 
-add_executable(appmain appmain.cc)
-
-link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
-target_link_libraries(appmain ${LIB_PREFIX}tatsy_pppm${LIB_POSTFIX})
-
-if (${ONSITE_BUILD} STREQUAL "ON")
-  set(ASSET_DIRECTORY "assets")
-  set(RESULT_DIRECTORY ".")
-else()
-  set(ASSET_DIRECTORY "${CMAKE_SOURCE_DIR}/assets")
-  set(RESULT_DIRECTORY "${CMAKE_SOURCE_DIR}/results")
-  file(MAKE_DIRECTORY ${RESULT_DIRECTORY})
-endif()
-
 if (MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zi")
-  set_property(TARGET appmain APPEND PROPERTY LINK_FLAGS "/DEBUG /PROFILE")
   set_property(TARGET tatsy_pppm APPEND PROPERTY LINK_FLAGS "/DEBUG /PROFILE")
-  configure_file(project.vcxproj.user.in "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/appmain.vcxproj.user" @ONLY)
   configure_file(project.vcxproj.user.in "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tatsy_pppm.vcxproj.user" @ONLY)
 endif()
+
+add_subdirectory(main)

@@ -3,7 +3,7 @@
 
 #include <string>
 
-static const std::string ASSET_DIRECTORY = "C:/Users/Tatsuya/Desktop/Lab/tatsy-pppm/assets/";
-static const std::string RESULT_DIRECTORY = "C:/Users/Tatsuya/Desktop/Lab/tatsy-pppm/results/";
+static const std::string ASSET_DIRECTORY = "assets/";
+static const std::string RESULT_DIRECTORY = "./";
 
 #endif  // _DIRECTORIES_H_
