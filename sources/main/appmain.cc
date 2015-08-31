@@ -1,9 +1,31 @@
-#include "renderer.h"
+#include "../renderer.h"
 
 #include <iostream>
 #include <cstdio>
 #include <string>
 
+//! Hard-coded render scene
+void setScene(Scene* scene, Camera* camera, int imageWidth, int imageHeight);
+
+//! Main
+int main(int argc, char** argv) {
+    const int imageWidth  = argc >= 2 ? atoi(argv[1]) : 1920;
+    const int imageHeight = argc >= 3 ? atoi(argv[2]) : 1080;
+    const int spp         = argc >= 4 ? atoi(argv[3]) : 10240;
+
+    Scene scene;
+    Camera camera;
+    setScene(&scene, &camera, imageWidth, imageHeight);
+
+    // Set render parameters
+    RenderParameters params(2000000, spp, 128, 16.0);
+
+    // Set renderer
+    ProgressivePhotonMappingProb ppmapa;
+    ppmapa.render(scene, camera, params);
+}
+
+//! Hard-coded render scene
 void setScene(Scene* scene, Camera* camera, int imageWidth, int imageHeight) {
     std::cout << "Preparing the scene -> ";
 
@@ -71,7 +93,7 @@ void setScene(Scene* scene, Camera* camera, int imageWidth, int imageHeight) {
     // Set scene
     scene->add(trimesh, meshBsdf);
     scene->add(titleMesh, LambertianBRDF::factory(Vector3D(0.70, 0.30, 0.30)));
-    scene->add(torusMesh, RefractionBSDF::factory(Vector3D(0.75, 0.75, 0.99)));
+    scene->add(torusMesh, RefractionBSDF::factory(Vector3D(0.75, 0.75, 0.99))); 
     scene->add(bunnyMesh, LambertianBRDF::factory(Vector3D(0.75, 0.75, 0.75)));
     scene->setEnvmap(envmap);
 
@@ -84,8 +106,10 @@ void setScene(Scene* scene, Camera* camera, int imageWidth, int imageHeight) {
             Vector3D p01(ii + tileSize, -10.0, jj);
             Vector3D p10(ii, -10.0, jj + tileSize);
             Vector3D p11(ii + tileSize, -10.0, jj + tileSize);
-            Vector3D color = (i + j) % 2 == 0 ? Vector3D(0.9, 0.9, 0.9) : Vector3D(0.2, 0.2, 0.2);
-            BSDF     bsdf  = (i + j) % 2 == 0 ? PhongBRDF::factory(color, 128.0) : SpecularBRDF::factory(color); 
+            Vector3D color = (i + j) % 2 == 0 ? Vector3D(0.9, 0.9, 0.9) 
+                                              : Vector3D(0.2, 0.2, 0.2);
+            BSDF     bsdf  = (i + j) % 2 == 0 ? PhongBRDF::factory(color, 128.0)
+                                              : SpecularBRDF::factory(color); 
             scene->add(Triangle(p00, p11, p01), bsdf);
             scene->add(Triangle(p00, p10, p11), bsdf);
         }
@@ -99,25 +123,4 @@ void setScene(Scene* scene, Camera* camera, int imageWidth, int imageHeight) {
     *camera = Camera(eye, -eye.normalized(), Vector3D(0.0, 1.0, 0.0), 45.0, imageWidth, imageHeight, 1.0);
 
     std::cout << "OK" << std::endl;
-}
-
-int main(int argc, char** argv) {
-    const int imageWidth  = argc >= 2 ? atoi(argv[1]) : 1920;
-    const int imageHeight = argc >= 3 ? atoi(argv[2]) : 1080;
-    const int spp         = argc >= 4 ? atoi(argv[3]) : 10240;
-
-    Scene scene;
-    Camera camera;
-    setScene(&scene, &camera, imageWidth, imageHeight);
-
-    // Set render parameters
-    RenderParameters params(2000000, spp, 128, 16.0);
-
-    // Set renderer
-    ProgressivePhotonMappingProb ppmapa;
-    ppmapa.render(scene, camera, params);
-    // ProgressivePhotonMapping ppm;
-    // ppm.render(scene, camera, params);
-    // PathTracing pathtrace;
-    // pathtrace.render(scene, camera, params);
 }

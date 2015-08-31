@@ -7,8 +7,8 @@ public:
     ~IReadOnly() {}
 
 private:
-    IReadOnly(const IReadOnly&) {}
-    IReadOnly& operator=(const IReadOnly&) {}
+    IReadOnly(const IReadOnly&) = delete;
+    IReadOnly& operator=(const IReadOnly&) = delete;
 };
 
 #endif  // _READONLY_H_

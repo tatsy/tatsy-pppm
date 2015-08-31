@@ -77,7 +77,7 @@ Halton::Halton(int dim, bool isPermute, unsigned int seed)
 {
     Assertion(dim <= nPrimes, "You cannot specify dimension over 1000");
 
-     XorShift rand = XorShift(seed);
+    XorShift rand(seed);
     bases.resize(dims);
     int sumBases = 0;
     for (int i = 0; i < dims; i++) {

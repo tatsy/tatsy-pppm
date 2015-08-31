@@ -10,5 +10,8 @@ sources/directories.h
 *.exe
 *.pdb
 *.dll
+*.ilk
+*.exp
+*.lib
 
 !images/*

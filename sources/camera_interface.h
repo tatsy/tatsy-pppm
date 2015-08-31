@@ -5,6 +5,9 @@
 #include "size.h"
 #include "ray.h"
 
+// --------------------------------------------------
+// ! Camera interface
+// --------------------------------------------------
 class ICamera {
 protected:
     Vector3D _center;

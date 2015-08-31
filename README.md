@@ -1,12 +1,14 @@
 tatsy-pppm
 ===
 
+[![Build Status](https://travis-ci.org/tatsy/tatsy-pppm.svg?branch=development)](https://travis-ci.org/tatsy/tatsy-pppm)
+
 > Phisically-based path tracer for [Ray tracing camp 3!!!](https://sites.google.com/site/raytracingcamp3/)
 
 ## Installation
 
 ```shell
-$ git clone https://github.com/tatsy/photon-diffusion.git
+$ git clone https://github.com/tatsy/tatsy-pppm.git
 $ cmake -DENABLE_AVX=OFF .
 $ cmake --build .
 ```

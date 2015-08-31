@@ -94,24 +94,6 @@ Vector3D Vector3D::clamp(const Vector3D& v, const Vector3D& lo, const Vector3D& 
     return Vector3D::maximum(lo, Vector3D::minimum(v, hi));
 }
 
-double Vector3D::x() const { return _x; }
-double Vector3D::y() const { return _y; }
-double Vector3D::z() const { return _z; }
-
-void Vector3D::setX(double x) { _x = x; }
-void Vector3D::setY(double y) { _y = y; }
-void Vector3D::setZ(double z) { _z = z; }
-
-double Vector3D::operator[](int d) const {
-    Assertion(0 <= d && d <= 2, "Dimension index should be between 0 and 2!!");
-    switch ( d ) {
-    case 0: return _x;
-    case 1: return _y;
-    case 2: return _z;
-    }
-    return 0;
-}
-
 Vector3D& Vector3D::operator=(const Vector3D& v) {
     this->_x = v._x;
     this->_y = v._y;

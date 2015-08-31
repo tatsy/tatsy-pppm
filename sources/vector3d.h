@@ -15,6 +15,9 @@
 #include <string>
 #include <immintrin.h>
 
+// --------------------------------------------------
+// ! 3D vector
+// --------------------------------------------------
 class VECTOR_3D_DLL Vector3D {
 private:
 
@@ -69,17 +72,27 @@ public:
 
     static Vector3D sqrt(const Vector3D& v);
     static Vector3D exp(const Vector3D& v);
-    static Vector3D clamp(const Vector3D& v, const Vector3D& lo = Vector3D(0.0, 0.0, 0.0), const Vector3D& hi = Vector3D(INFTY, INFTY, INFTY));
+    static Vector3D clamp(const Vector3D& v, 
+                          const Vector3D& lo = Vector3D(0.0, 0.0, 0.0),
+                          const Vector3D& hi = Vector3D(INFTY, INFTY, INFTY));
 
-    inline double x() const;
-    inline double y() const;
-    inline double z() const;
+    inline double x() const { return _x; }
+    inline double y() const { return _y; }
+    inline double z() const { return _z; }
 
-    inline void setX(double x);
-    inline void setY(double y);
-    inline void setZ(double z);
+    inline void setX(double x) { _x = x; }
+    inline void setY(double y) { _y = y; }
+    inline void setZ(double z) { _z = z; }
 
-    inline double operator[](int d) const;
+    inline double operator[](int d) const {
+        Assertion(0 <= d && d <= 2, "Dimension index should be between 0 and 2!!");
+        switch (d) {
+        case 0: return _x;
+        case 1: return _y;
+        case 2: return _z;
+        }
+        return 0;
+    }
 
     std::string toString() const;
 };

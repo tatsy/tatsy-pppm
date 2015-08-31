@@ -1,0 +1,36 @@
+language: cpp
+sudo: false
+compiler:
+    - gcc
+    - clang
+
+addons:
+    apt:
+        sources:
+            - ubuntu-toolchain-r-test
+        packages:
+            - gcc-4.9
+            - g++-4.9
+
+before_install:
+    - if [ $CC  == "gcc" ]; then export CC=gcc-4.9; fi
+    - if [ $CXX == "g++" ]; then export CXX=g++-4.9; fi
+
+before_script:
+    - g++ --version
+    - clang++ --version
+    - cmake --version
+
+script:
+    - cmake -DENABLE_AVX=OFF -DBUILD_TEST=OFF .
+    - cmake --build .
+
+branches:
+    only:
+        - master
+        - development
+
+notifications:
+    recipients: tatsy.mail@gmail.com
+    on_success: change
+    on_failure: always
